@@ -1,0 +1,10 @@
+{
+  "name": "Squeekwatch",
+  "repoUrl": "https://github.com/REPLACE_ME/squeekwatch",
+  "demoUrl": "https://REPLACE_ME.github.io/squeekwatch/",
+  "integration": "Squeekwatch reads Squeekchain's public edges and re-derives the ledger from them: the live hardware-counter document at api.squeekchain.com, the community API for aura, leaderboard and badge data, and read-only eth_call probes against the published Sepolia contracts (SQK totalSupply, symbol, decimals, gacha vault solvency, deployed bytecode, and the settlement transaction hash from the builder anchor). Every number it shows is cross-checked against a second edge, and the CLI exits non-zero the moment the public numbers stop describing one another. It ships a browser dashboard with a recorded-snapshot replay mode, a Model Context Protocol server for agents, and a machine-readable audit report. No wallets, no keys, no writes: the tool only ever calls eth_call, eth_getCode and GET.",
+  "fetchedAt": "2026-10-28T19:25:20.649Z",
+  "source": "https://api.squeekchain.com, https://community.squeekchain.com",
+  "installationId": "stream-game-sepolia-test-20261025-01",
+  "note": "Real snapshot captured for offline tests and demos. Regenerate with: npm run fixtures"
+}

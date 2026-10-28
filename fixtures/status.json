@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "installationId": "stream-game-sepolia-test-20261025-01",
+  "revision": "Er6WZYRvlUfUBgKvx2nBS-j6roGUDNKDqfZvExJgv_w",
+  "generatedAt": "2026-10-28T19:25:20.649Z",
+  "measurement": {
+    "freshness": "online",
+    "observedAt": "2026-10-28T19:25:17.488Z",
+    "receivedAt": "2026-10-28T19:25:18.034Z",
+    "staleAfterSeconds": 120,
+    "counterEpoch": "c011f01a-93ba-45ff-8579-619ddfdf40ec",
+    "cumulativeWorkUnits": "22073",
+    "provenance": "hardware",
+    "coreStatus": "IDLE",
+    "rpmMilli": 0,
+    "speedMmPerSecond": 0,
+    "distanceMm": 0
+  },
+  "builder": {
+    "status": "available",
+    "anchor": {
+      "cumulativeWork": "22073",
+      "cumulativeBlockUnits": "2027753319164",
+      "blockHeight": "2027",
+      "blockProgress": "753319164",
+      "workPerThousandBlocks": "11224",
+      "settledThroughRound": "320",
+      "confirmedAt": "2026-10-28T19:10:36.000Z",
+      "transactionHash": "0x0fdeaf786adc8b253b0366920c33d21f8238509f5d8f91eb7652ddfa393c208e"
+    },
+    "queued": {
+      "closedRoundCount": "1",
+      "closedWorkUnits": "0",
+      "openRoundWorkUnits": "0"
+    },
+    "projected": {
+      "cumulativeWork": "22073",
+      "cumulativeBlockUnits": "2027753319164",
+      "blockHeight": "2027",
+      "blockProgress": "753319164",
+      "workPerThousandBlocks": "11224",
+      "firstCompletedBlock": null,
+      "lastCompletedBlock": null,
+      "completedBlockCount": "0",
+      "lifecycle": "optimistic"
+    }
+  },
+  "oracle": {
+    "state": "accepted",
+    "reason": null,
+    "latestAcceptedAt": "2026-10-28T19:25:18.034Z",
+    "latestClosure": {
+      "firstRound": "321",
+      "lastRound": "321",
+      "roundCount": "1",
+      "acceptedAt": "2026-10-28T19:20:08.057Z"
+    }
+  },
+  "settlementQueue": {
+    "status": "available",
+    "state": "submitted",
+    "settlementEnabled": true,
+    "reporterEnvironmentEnabled": true,
+    "buffered": {
+      "firstRound": "321",
+      "lastRound": "321",
+      "roundCount": "1",
+      "activeRoundCount": "0",
+      "workUnits": "0"
+    },
+    "projected": {
+      "cumulativeWork": "22073",
+      "cumulativeBlockUnits": "2027753319164",
+      "blockHeight": "2027",
+      "blockProgress": "753319164",
+      "workPerThousandBlocks": "11224",
+      "firstCompletedBlock": null,
+      "lastCompletedBlock": null,
+      "completedBlockCount": "0",
+      "lifecycle": "optimistic"
+    },
+    "incidentOpen": false,
+    "blockedReason": null,
+    "lastRun": {
+      "startedAt": "2026-10-28T19:20:27.413Z",
+      "finishedAt": "2026-10-28T19:20:29.804Z",
+      "result": "submitted"
+    },
+    "latestSubmission": {
+      "submissionId": "47e6f387-1391-4fd7-b8c6-2958fb303cc0",
+      "lifecycle": "submitted",
+      "previousSettledThroughRound": "320",
+      "settledThroughRound": "321",
+      "roundCount": "1",
+      "activeRoundCount": "0",
+      "expected": {
+        "cumulativeWork": "22073",
+        "cumulativeBlockUnits": "2027753319164",
+        "blockHeight": "2027",
+        "blockProgress": "753319164",
+        "workPerThousandBlocks": "11224",
+        "firstCompletedBlock": null,
+        "lastCompletedBlock": null,
+        "completedBlockCount": "0"
+      },
+      "transactionHash": "0x3655a9649602f69c47204adb2eeafc7adff0f3762866d192d5d75c340e20a93f",
+      "createdAt": "2026-10-28T19:20:28.897Z",
+      "submittedAt": "2026-10-28T19:20:28.897Z",
+      "confirmedAt": null,
+      "terminalAt": null,
+      "changedAt": "2026-10-28T19:20:28.897Z",
+      "outcomeCode": null
+    }
+  },
+  "signer": {
+    "kind": "trust-m",
+    "algorithm": "ecdsa-p256-sha256",
+    "keySlot": "0xE0F3",
+    "enrolledAt": "2026-10-26T16:03:26.750Z",
+    "lastVerifiedAt": "2026-10-28T19:25:18.034Z",
+    "lastSignature": "L3XBtbw1nskVDyvLE38rMg7KgxYe5jg8ktt5GHlmnodhIKxgg+N/xQesSCe6cyIBYnFR1ShZBYoJJl8DMzqZXw=="
+  },
+  "modules": [
+    {
+      "instanceId": "wheel",
+      "moduleType": "wheel.counter",
+      "driverId": "usb-rp2040-a3144e-lm393",
+      "moduleVersion": "0.2.1",
+      "schemaVersion": 1,
+      "state": "ready",
+      "observedAt": "2026-10-28T19:25:17.488281Z",
+      "provenance": "hardware",
+      "health": {
+        "checkedAt": "2026-10-28T19:25:17.488281Z"
+      },
+      "data": {}
+    }
+  ]
+}

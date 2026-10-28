@@ -1,0 +1,380 @@
+{
+  "badges": [
+    {
+      "id": "clout.signed_up",
+      "lane": "clout",
+      "title": "Signed Up",
+      "description": "Verify a wallet and link your X account.",
+      "instruction": "Verify a wallet and link your X account.",
+      "criteria": [
+        {
+          "label": "Verify a wallet and link your X account",
+          "detail": null
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 1159,
+        "heldByBps": 10000
+      }
+    },
+    {
+      "id": "clout.on_discord",
+      "lane": "clout",
+      "title": "On Discord",
+      "description": "Link your Discord account to your Squeekchain profile.",
+      "instruction": "Link your Discord account.",
+      "criteria": [
+        {
+          "label": "Link a Discord account",
+          "detail": "Linked from the Accounts card on your profile. One Discord account per member."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 47,
+        "heldByBps": 406
+      }
+    },
+    {
+      "id": "clout.the_invitooor",
+      "lane": "clout",
+      "title": "The Invitooor",
+      "description": "Invite your first friend to Squeekchain and have them complete signup.",
+      "instruction": "Have your first invited friend finish wallet and X signup.",
+      "criteria": [
+        {
+          "label": "1 friend joins with your invite link",
+          "detail": "A friend counts once they verify a wallet and link X. Friends later disqualified stop counting."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 159,
+        "heldByBps": 1372
+      }
+    },
+    {
+      "id": "clout.the_recruitooor",
+      "lane": "clout",
+      "title": "The Recruitooor",
+      "description": "Invite five friends with established X accounts who complete signup.",
+      "instruction": "Have 5 invited friends with established X accounts finish signup.",
+      "criteria": [
+        {
+          "label": "5 friends with established X accounts join with your invite link",
+          "detail": "Established X account: created at least 1 year ago. Friends with newer X accounts still count toward The Invitooor, but not this badge. Friends later disqualified stop counting."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 28,
+        "heldByBps": 242
+      }
+    },
+    {
+      "id": "clout.the_ringleader",
+      "lane": "clout",
+      "title": "The Ringleader",
+      "description": "Invite twenty-five friends with established X accounts who complete signup.",
+      "instruction": "Have 25 invited friends with established X accounts finish signup.",
+      "criteria": [
+        {
+          "label": "25 friends with established X accounts join with your invite link",
+          "detail": "Established X account: created at least 1 year ago. Friends with newer X accounts still count toward The Invitooor, but not this badge. Friends later disqualified stop counting."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 1,
+        "heldByBps": 9
+      }
+    },
+    {
+      "id": "code.project_submitted",
+      "lane": "code",
+      "title": "The Buildooooor",
+      "description": "Submit a Squeekchain project and verify your connection to it.",
+      "instruction": "Submit one project with verified attribution.",
+      "criteria": [
+        {
+          "label": "Verify 1 project you built for Squeekchain",
+          "detail": "Either an IMD project paid from one of your verified wallets, or a GitHub repository you prove you control with a challenge file. Repositories are rechecked daily; removing the file revokes the badge."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 0,
+        "heldByBps": 0
+      }
+    },
+    {
+      "id": "clout.the_squeekfather",
+      "lane": "clout",
+      "title": "The Squeekfather",
+      "description": "Three of the friends you invited each bring in a friend of their own.",
+      "instruction": "Have 3 invited friends earn The Invitooor.",
+      "criteria": [
+        {
+          "label": "3 friends you invited each bring in a friend of their own",
+          "detail": "Each of them needs The Invitooor: someone they invited verified a wallet and linked X. Disqualified members stop counting at either step."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 10,
+        "heldByBps": 86
+      }
+    },
+    {
+      "id": "code.the_tester",
+      "lane": "code",
+      "title": "The Tester",
+      "description": "Use a Squeekchain contract from one of your verified wallets.",
+      "instruction": "Send a transaction to any Squeekchain contract.",
+      "criteria": [
+        {
+          "label": "Send a transaction to a Squeekchain contract from one of your verified wallets",
+          "detail": "Counts direct calls to the Squeekchain contracts we track on Sepolia; calls made through another contract don't count yet. Wallet activity is read on a schedule, so it can take a while to show."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 0,
+        "heldByBps": 0
+      }
+    },
+    {
+      "id": "clout.first_squeek",
+      "lane": "clout",
+      "title": "First Squeek",
+      "description": "The first member to verify a wallet and link X.",
+      "instruction": "Be the first member to complete signup.",
+      "criteria": [
+        {
+          "label": "Be the first member to verify a wallet and link X",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        },
+        {
+          "label": "A trophy for your profile",
+          "detail": "It shows on your profile but adds no Aura."
+        }
+      ],
+      "trophy": true,
+      "rarity": {
+        "holders": 1,
+        "heldByBps": 9
+      }
+    },
+    {
+      "id": "clout.early_squeek",
+      "lane": "clout",
+      "title": "Early Squeek",
+      "description": "One of the first 888 members to verify a wallet and link X.",
+      "instruction": "Be one of the first 888 members to complete signup.",
+      "criteria": [
+        {
+          "label": "Be one of the first 888 members to verify a wallet and link X",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 888,
+        "heldByBps": 7662
+      }
+    },
+    {
+      "id": "clout.first_invitooor",
+      "lane": "clout",
+      "title": "First Invitooor",
+      "description": "The first member whose invited friend completed signup.",
+      "instruction": "Be the first member whose invitation completes.",
+      "criteria": [
+        {
+          "label": "Be the first member whose first invited friend completes signup",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        },
+        {
+          "label": "A trophy for your profile",
+          "detail": "It shows on your profile but adds no Aura."
+        }
+      ],
+      "trophy": true,
+      "rarity": {
+        "holders": 1,
+        "heldByBps": 9
+      }
+    },
+    {
+      "id": "clout.early_invitooor",
+      "lane": "clout",
+      "title": "Early Invitooor",
+      "description": "One of the first 88 members whose invited friend completed signup.",
+      "instruction": "Be one of the first 88 members whose invitation completes.",
+      "criteria": [
+        {
+          "label": "Be one of the first 88 members whose first invited friend completes signup",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 88,
+        "heldByBps": 759
+      }
+    },
+    {
+      "id": "code.first_buildooooor",
+      "lane": "code",
+      "title": "First Buildooooor",
+      "description": "The first member to verify a project.",
+      "instruction": "Be the first member to verify a project.",
+      "criteria": [
+        {
+          "label": "Be the first member to verify a project",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        },
+        {
+          "label": "A trophy for your profile",
+          "detail": "It shows on your profile but adds no Aura."
+        }
+      ],
+      "trophy": true,
+      "rarity": {
+        "holders": 0,
+        "heldByBps": 0
+      }
+    },
+    {
+      "id": "code.early_buildooooor",
+      "lane": "code",
+      "title": "Early Buildooooor",
+      "description": "One of the first 88 members to verify a project.",
+      "instruction": "Be one of the first 88 members to verify a project.",
+      "criteria": [
+        {
+          "label": "Be one of the first 88 members to verify a project",
+          "detail": "Places go by when each member reached it and are never reassigned: if a holder is later disqualified, their place stays empty. Team accounts don't take places."
+        },
+        {
+          "label": "Account in good standing",
+          "detail": "Not disqualified for abuse or duplicate accounts. Wallets funded together are reviewed as one person."
+        },
+        {
+          "label": "Your wallet and X account are linked",
+          "detail": "A signature proves the wallet is yours, and your X account is linked through Squeekchain sign-in."
+        }
+      ],
+      "trophy": false,
+      "rarity": {
+        "holders": 0,
+        "heldByBps": 0
+      }
+    }
+  ],
+  "snapshot": {
+    "members": 1159,
+    "computedAt": "2026-10-28T17:42:17.322Z"
+  }
+}

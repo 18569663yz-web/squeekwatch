@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Show toolchain
+        run: |
+          node --version
+          npm --version
+
+      # Zero dependencies: nothing to install, so the only prerequisite is syntax.
+      - name: Syntax check every module
+        run: |
+          set -eu
+          for file in src/*.js scripts/*.mjs; do
+            echo "checking $file"
+            node --check "$file"
+          done
+
+      - name: Unit tests
+        run: npm test
+
+      # Runs entirely from fixtures/, so CI never touches the public APIs or Sepolia.
+      - name: Audit the recorded snapshot offline
+        run: node src/cli.js audit --offline
+
+      - name: HTTP server smoke test
+        run: |
+          set -eu
+          node src/server.js --port 8799 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl -fsS "http://127.0.0.1:8799/healthz" -o /tmp/healthz.json; then
+              break
+            fi
+            sleep 0.25
+          done
+          node -e "const h=require('node:fs').readFileSync('/tmp/healthz.json','utf8');const j=JSON.parse(h);if(j.ok!==true||j.service!=='squeekwatch'){throw new Error('bad healthz: '+h)};console.log('healthz ok',j.version)"
+          curl -fsS -D /tmp/headers.txt "http://127.0.0.1:8799/api/audit?offline=1" -o /tmp/audit.json
+          node -e "const j=JSON.parse(require('node:fs').readFileSync('/tmp/audit.json','utf8'));if(!j.verdict||!Array.isArray(j.findings)){throw new Error('bad audit payload')};console.log('audit',j.verdict,j.pass+'/'+j.total)"
+          grep -qi 'access-control-allow-origin: \*' /tmp/headers.txt
+          grep -qi 'cache-control: no-store' /tmp/headers.txt
+          curl -fsS "http://127.0.0.1:8799/" -o /tmp/dashboard.html
+          grep -q 'data-verdict' /tmp/dashboard.html
+          curl -fsS "http://127.0.0.1:8799/testdrive.html" -o /tmp/testdrive.html
+          grep -q 'approve(stakingProxy, 0)' /tmp/testdrive.html
+          echo "static dashboard served"
+          curl -fsS "http://127.0.0.1:8799/badge.svg?offline=1" -o /tmp/badge.svg
+          grep -q 'role="img"' /tmp/badge.svg
+          echo "badge svg served"
+
+      # The dashboard must stay a single file per page: no CDN, no fonts, no images.
+      - name: Dashboard stays self-contained
+        run: |
+          set -eu
+          for file in dashboard/index.html dashboard/testdrive.html; do
+            test -s "$file"
+            if grep -nE '<script[^>]+src=|<link[^>]+href="https?:' "$file"; then
+              echo "::error file=$file::external resource reference"
+              exit 1
+            fi
+            if LC_ALL=C grep -nP '[^\x00-\x7F]' "$file"; then
+              echo "::error file=$file::non-ascii content"
+              exit 1
+            fi
+          done
+          echo "dashboard pages are self-contained and ASCII"
+
+      - name: Badge renderer smoke test
+        run: |
+          set -eu
+          cat > /tmp/badge-smoke.mjs <<'NODE'
+          const { pathToFileURL } = await import('node:url');
+          const { renderBadgeSvg, renderStatusBadge, renderAuditBadge } = await import(pathToFileURL(process.cwd() + '/src/badge.js').href);
+          const svg = renderBadgeSvg({ label: 'squeekwatch', value: 'VERIFIED 17/17' });
+          if (!svg.includes('role="img"')) throw new Error('badge missing role="img"');
+          if (!svg.includes('<title>')) throw new Error('badge missing accessible <title>');
+          if (svg.includes('<script')) throw new Error('badge contains a script tag');
+          if (!/^<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(svg)) throw new Error('badge is not a standalone svg');
+          const status = renderStatusBadge(null);
+          const audit = renderAuditBadge(null);
+          if (status.length < 100 || audit.length < 100) throw new Error('badge output too short');
+          const stripped = status.replace(/xmlns="[^"]*"/g, '');
+          if (/https?:\/\//.test(stripped)) throw new Error('status badge references an external resource');
+          console.log('badge renderer ok', svg.length, status.length, audit.length);
+          NODE
+          node /tmp/badge-smoke.mjs

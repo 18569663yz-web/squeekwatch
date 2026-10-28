@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "installationId": "stream-game-sepolia-test-20261025-01",
+  "status": "available",
+  "generatedAt": "2026-10-28T19:25:21.229Z",
+  "release": {
+    "id": "stream-game-sepolia-test-20261026-01",
+    "protocolRevision": "stream-game-1",
+    "rewardModelRevision": "funded-stream-q128-1"
+  },
+  "chain": {
+    "target": "sepolia",
+    "chainId": "11155111",
+    "confirmations": "12",
+    "deploymentBlock": "11998937",
+    "economyDeploymentBlock": "11998950",
+    "indexedThroughBlock": "12014395",
+    "safeThroughBlock": "12014384",
+    "safeBlockHash": "0x7025044badc24fc2e4011c07e7abae48cde3cb5f726c00ffddfcc3d922dd8171",
+    "safeBlockTimestamp": "2026-10-28T19:23:00.000Z"
+  },
+  "identities": {
+    "core": "0x980b4424c007caf7a1f3670b48c8eaef7ebc3d44",
+    "tokenFactory": "0x779a302adbaa9c8a3da45ef48ad67e6a45fcef29",
+    "token": "0x5501e1fa81be1c3f49225fa7668da0245d07db60",
+    "genesis": "0xcb98349c134ab983da5bfd80527dfe2552bdb70f",
+    "mining": {
+      "proxy": "0xcd46990f8349057335289ef282c276204b6cdc62",
+      "implementation": "0x62d25dc1a24033a80edcc4b2d2ffe9348290cc4c",
+      "implementationVersion": "9",
+      "storageLayoutDigest": "0x136850fc0e19543752b7382cde164f10588dc3b4648e7d704f2f06394ead8b90"
+    },
+    "staking": {
+      "proxy": "0x4b67b739dfd832f4eac67a7aa3bc244fb74cea4f",
+      "implementation": "0xbbb816616d8840bd98094bf5a20f208df089230b",
+      "implementationVersion": "2",
+      "storageLayoutDigest": "0x39f298bf725abe5173d3a3b8ded2d4776d4c53fc9923f0027170dd458210a6f8"
+    },
+    "launch": "0x1ff6485abfbb2d183cd673d78e1ab31c098e04dd"
+  },
+  "asset": {
+    "address": "0x5501e1fa81be1c3f49225fa7668da0245d07db60",
+    "symbol": "SQK",
+    "decimals": 18
+  },
+  "lifecycle": {
+    "stage": "active",
+    "startRound": "13",
+    "currentRound": "322",
+    "paused": false,
+    "guardian": "0x3c4c2ba9a5dfbfc5e48dceabdd3b004131a04be6"
+  },
+  "supply": {
+    "capBaseUnits": "2100000000000000000000000000",
+    "premintBaseUnits": "1",
+    "miningMintedBaseUnits": "8066546793063427114304838",
+    "totalMintedBaseUnits": "8066546793063427114304839",
+    "totalBurnedBaseUnits": "0",
+    "liveSupplyBaseUnits": "8066546793063427114304839",
+    "unmintedCapacityBaseUnits": "2091933453206936572885695161"
+  },
+  "schedule": {
+    "allowanceBaseUnits": "2099999999999999999999999999",
+    "launchBonusBaseUnits": "105000000000000000000000000",
+    "bonusBlocks": "97020",
+    "halvingBlocks": "393470",
+    "firstPeriodRateBaseUnits": "2897298396319922738708",
+    "startHeight": "0",
+    "closedThroughBlock": "2027",
+    "issuedBaseUnits": "8066546793063427114304838"
+  },
+  "mining": {
+    "processedThroughRound": "320",
+    "fundedBlocks": "2027",
+    "gachaFundedBaseUnits": "8060015158504248523815084",
+    "stakingFundedBaseUnits": "6531634559178590489754",
+    "gachaVault": "0x5f6ba50f448b84e09f5ee324a6402b033ba70e28",
+    "curve": {
+      "floorBps": 4000,
+      "targetPower": "5555000000000000000000000"
+    },
+    "pendingCurve": null
+  },
+  "staking": {
+    "paused": false,
+    "launchReady": true,
+    "totalStakedBaseUnits": "0",
+    "freshPrincipalBaseUnits": "0",
+    "freshUntilRound": "0",
+    "totalNftPower": "42000000000000000000000",
+    "totalSqkPower": "0",
+    "sqkPerPower": "40000000000000000000",
+    "referencePower": "1000000000000000000000",
+    "exitPolicy": {
+      "minBps": 200,
+      "maxBps": 6000,
+      "saturationBps": 2000,
+      "windowDays": 7,
+      "pressureFloorBaseUnits": "21000000000000000000000000"
+    },
+    "rewards": {
+      "fundedBaseUnits": "6531634559178590489754",
+      "paidBaseUnits": "2410422766563133045967",
+      "compoundedBaseUnits": "0",
+      "remainingBaseUnits": "0",
+      "rewardIndex": "695835768034326655861568869318904851479",
+      "streamRateBaseUnitsPerSecond": "0",
+      "streamEndsAt": "0"
+    }
+  },
+  "nft": {
+    "issued": "9999",
+    "burned": "0",
+    "live": "9999",
+    "mergesOpen": false,
+    "maximumLevel": 10,
+    "cooldownBlocks": [
+      "0",
+      "3000",
+      "7000",
+      "14000",
+      "21000",
+      "28000",
+      "35000",
+      "42000",
+      "49000",
+      "0"
+    ],
+    "basePower": [
+      "1000",
+      "2200",
+      "4840",
+      "10648",
+      "23426",
+      "51536",
+      "113380",
+      "249436",
+      "548759",
+      "1207269"
+    ]
+  }
+}

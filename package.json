@@ -1,0 +1,56 @@
+{
+  "name": "squeekwatch",
+  "version": "0.1.0",
+  "description": "Zero-dependency observatory, invariant auditor and MCP bridge for Squeekchain's hamster-powered proof-of-work economy.",
+  "keywords": [
+    "squeekchain",
+    "hamster",
+    "proof-of-work",
+    "observability",
+    "mcp",
+    "sepolia",
+    "web3",
+    "dashboard"
+  ],
+  "homepage": "https://github.com/REPLACE_ME/squeekwatch#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE_ME/squeekwatch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/REPLACE_ME/squeekwatch/issues"
+  },
+  "license": "MIT",
+  "author": "REPLACE_ME",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "squeekwatch": "./src/cli.js"
+  },
+  "files": [
+    "src",
+    "dashboard",
+    "fixtures",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node src/server.js",
+    "status": "node src/cli.js status",
+    "watch": "node src/cli.js watch",
+    "audit": "node src/cli.js audit",
+    "badge": "node src/cli.js badge",
+    "race": "node src/cli.js race",
+    "mcp": "node src/cli.js mcp",
+    "fixtures": "node scripts/record-fixtures.mjs",
+    "check:launch": "node scripts/launch-checklist.mjs",
+    "test": "node --test",
+    "serve": "node src/server.js",
+    "test:watch": "node --test --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

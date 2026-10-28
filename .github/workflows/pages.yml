@@ -1,0 +1,63 @@
+name: Pages
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'dashboard/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy dashboard
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The board degrades to "local verification (API only)" when /api/* is unreachable,
+      # so a static Pages deploy is the intended reading mode, not a broken build.
+      - name: Check the dashboard pages exist
+        run: |
+          set -eu
+          test -s dashboard/index.html
+          test -s dashboard/testdrive.html
+          echo "dashboard pages present"
+
+      # Guard the zero-dependency rule: no CDN, no webfont, no image files.
+      - name: Dashboard has no external resources
+        run: |
+          set -eu
+          for file in dashboard/*.html; do
+            if grep -nE '<script[^>]+src=|<link[^>]+href="https?:|<img[^>]+src="https?:' "$file"; then
+              echo "::error file=$file::external resource reference"
+              exit 1
+            fi
+          done
+          echo "no external resources referenced"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Squeekwatch - independent observatory for the Squeekchain hamster economy: live telemetry, supply invariants and on-chain evidence.">
+<meta name="generator" content="squeekwatch">
+<title>Squeekwatch - hamster economy observatory</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231A1A20'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FF7A1A' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23F2EAD3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink: #1A1A20;
+    --panel: #22222A;
+    --panel-2: #262630;
+    --line: #33333D;
+    --line-soft: #2B2B34;
+    --cream: #F2EAD3;
+    --muted: #8A8A93;
+    --dim: #6C6C76;
+    --orange: #FF7A1A;
+    --red: #C7362B;
+    --green: #3FA46A;
+    --amber: #D9A521;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", Impact, system-ui, sans-serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 4px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(51, 51, 61, 0.28) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(51, 51, 61, 0.28) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(1100px 460px at 70% -10%, #000 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(1100px 460px at 70% -10%, #000 0%, transparent 72%);
+    z-index: 0;
+  }
+  .shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 20px 30px;
+  }
+  a { color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--line); }
+  a:hover { color: var(--orange); border-bottom-color: var(--orange); }
+  :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .lbl {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand .mark { width: 26px; height: 26px; flex: none; }
+  .brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .wordmark {
+    font-family: var(--display);
+    font-size: 21px;
+    line-height: 1;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cream);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .wordmark b { color: var(--orange); font-weight: 700; }
+  .tagline {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 3px 7px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--panel);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--cream); font-weight: 600; }
+  .chip.is-live { border-color: rgba(63, 164, 106, 0.5); color: #9FD3B5; }
+  .chip.is-warn { border-color: rgba(217, 165, 33, 0.5); color: #E7C878; }
+  .chip.is-fail { border-color: rgba(199, 54, 43, 0.55); color: #E39A93; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex: none; display: inline-block; }
+  .dot.ok { background: var(--green); }
+  .dot.warn { background: var(--amber); }
+  .dot.fail { background: var(--red); }
+  .dot.idle { background: var(--dim); }
+  .dot.orange { background: var(--orange); }
+  .btn {
+    appearance: none;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 7px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--orange); color: var(--orange); }
+  .btn[aria-pressed="true"] { border-color: var(--orange); color: var(--orange); }
+  .btn.ghost { background: transparent; color: var(--muted); }
+  .clock { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 16px 12px 15px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .verdict[data-verdict="DEGRADED"] { border-left-color: var(--amber); }
+  .verdict[data-verdict="FAILED"] { border-left-color: var(--red); }
+  .verdict[data-verdict="UNKNOWN"] { border-left-color: var(--dim); }
+  .verdict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 7px);
+  }
+  .vmark {
+    font-family: var(--display);
+    font-size: 30px;
+    line-height: 1;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--green);
+    flex: none;
+  }
+  .verdict[data-verdict="DEGRADED"] .vmark { color: var(--amber); }
+  .verdict[data-verdict="FAILED"] .vmark { color: var(--red); }
+  .verdict[data-verdict="UNKNOWN"] .vmark { color: var(--dim); }
+  .vbody { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .vword {
+    font-family: var(--display);
+    font-size: 27px;
+    line-height: 0.95;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .verdict[data-verdict="DEGRADED"] .vword { color: var(--amber); }
+  .verdict[data-verdict="FAILED"] .vword { color: var(--red); }
+  .verdict[data-verdict="UNKNOWN"] .vword { color: var(--dim); }
+  .vsub { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--muted); }
+  .vsub b { color: var(--cream); font-weight: 600; }
+  .vgen { margin-left: auto; display: flex; flex-direction: column; gap: 3px; text-align: right; }
+  .vgen .stamp { font-family: var(--mono); font-size: 11px; color: var(--cream); letter-spacing: 0.02em; }
+  .vchips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .verdict .chip { background: var(--ink); }
+
+  /* ---------- notices ---------- */
+  .banner {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 9px 13px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #E3DCC8;
+  }
+  .banner[hidden] { display: none; }
+  .banner.is-fail { border-left-color: var(--red); }
+  .banner b { color: var(--cream); }
+  .banner .banner-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    white-space: nowrap;
+    padding-top: 1px;
+  }
+  .banner.is-fail .banner-tag { color: #E39A93; }
+
+  /* ---------- panels ---------- */
+  main {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    min-height: 34px;
+  }
+  .panel-head h2 {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cream);
+    white-space: nowrap;
+  }
+  .panel-head .head-right { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .panel-foot {
+    padding: 7px 12px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .empty {
+    padding: 16px 12px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  #telemetry { grid-column: span 5; }
+  #economy { grid-column: span 7; }
+  #history { grid-column: span 12; }
+  #audit { grid-column: span 6; }
+  #evidence { grid-column: span 6; }
+
+  /* ---------- telemetry ---------- */
+  .telemetry-body { display: grid; grid-template-columns: 216px minmax(0, 1fr); align-items: stretch; }
+  .gauge-col {
+    padding: 10px 4px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border-right: 1px solid var(--line-soft);
+    min-width: 0;
+  }
+  #gauge { width: 100%; height: 116px; display: block; }
+  .gauge-readout { display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: -4px; }
+  .gauge-readout b {
+    font-family: var(--display);
+    font-size: 31px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge-readout b.is-stale { color: #E39A93; }
+  .rpm-unit { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; color: var(--muted); }
+  .gauge-scale { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: var(--dim); }
+  .stats {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background: var(--line-soft);
+    gap: 1px;
+  }
+  .stat { background: var(--panel); padding: 7px 11px 8px; min-width: 0; }
+  .stat dt { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .stat dd {
+    margin: 2px 0 0;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.2;
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .stat dd.sm { font-size: 11.5px; }
+  .stat .stat-sub { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.02em; display: block; margin-top: 1px; }
+  .stat dd.is-stale, .stat dd.is-stale + .stat-sub { color: #E39A93; }
+  .stat dd .unit { color: var(--muted); font-size: 10px; margin-left: 2px; }
+  .telemetry-body .mm { color: var(--orange); }
+
+  /* ---------- economy tiles ---------- */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line-soft);
+    border-top: 1px solid var(--line-soft);
+  }
+  .tile { background: var(--panel); padding: 9px 12px 10px; min-width: 0; }
+  .tile .lbl { display: block; margin-bottom: 3px; }
+  .tile .big {
+    font-family: var(--display);
+    font-size: 27px;
+    line-height: 0.98;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .tile .big .unit { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); font-weight: 400; }
+  .tile .tile-sub { font-family: var(--mono); font-size: 9.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.01em; overflow-wrap: anywhere; }
+  .bar { position: relative; height: 4px; background: #2B2B34; border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--orange); border-radius: 2px; min-width: 2px; display: block; }
+  .bar > i.is-green { background: var(--green); }
+  .bar > i.is-amber { background: var(--amber); }
+  .bar-nums { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--dim); margin-top: 3px; letter-spacing: 0.03em; }
+  .stack-strip {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 7px 12px;
+    border-top: 1px solid var(--line-soft);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  .stack-strip b { color: var(--cream); font-weight: 500; }
+
+  /* ---------- history / sparklines ---------- */
+  .spark-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line-soft); }
+  .spark-cell { background: var(--panel); padding: 9px 12px 10px; min-width: 0; }
+  .spark-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .spark-head .val { font-family: var(--display); font-size: 19px; line-height: 1; font-weight: 700; color: var(--cream); font-variant-numeric: tabular-nums; }
+  .spark-head .range { margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.03em; }
+  .spark-cell canvas { width: 100%; height: 72px; display: block; }
+
+  /* ---------- audit ---------- */
+  .findings { margin: 0; padding: 0; }
+  .finding { border-bottom: 1px solid var(--line-soft); }
+  .finding:last-child { border-bottom: 0; }
+  .finding > summary {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    gap: 9px;
+    align-items: center;
+    padding: 7px 12px;
+    cursor: pointer;
+    list-style: none;
+    box-shadow: inset 2px 0 transparent;
+  }
+  .finding > summary::-webkit-details-marker { display: none; }
+  .finding > summary:hover { background: var(--panel-2); }
+  .finding[data-sev="warn"] > summary { box-shadow: inset 2px 0 var(--amber); }
+  .finding[data-sev="fail"] > summary { box-shadow: inset 2px 0 var(--red); }
+  .fmain { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex-wrap: wrap; }
+  .fid { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.01em; white-space: nowrap; }
+  .ftitle { font-size: 12px; color: var(--cream); line-height: 1.35; }
+  .finding[data-sev="fail"] .ftitle { color: #F0C7C2; }
+  .finding[data-sev="warn"] .ftitle { color: #EBD9A8; }
+  .fsev { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--dim); }
+  .finding[data-sev="ok"] .fsev { color: #9FD3B5; }
+  .finding[data-sev="warn"] .fsev { color: var(--amber); }
+  .finding[data-sev="fail"] .fsev { color: #E39A93; }
+  .fbody { padding: 0 12px 10px 33px; }
+  .fbody p { margin: 0 0 5px; font-size: 11.5px; color: #CBC3B0; line-height: 1.5; }
+  .fkv { display: flex; gap: 8px; font-family: var(--mono); font-size: 10px; color: var(--muted); overflow-wrap: anywhere; }
+  .fkv span { color: var(--dim); min-width: 62px; flex: none; }
+  .fkv code { color: #D8D0BC; }
+  .fbody .fsrc { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px; display: block; }
+
+  /* ---------- evidence ---------- */
+  .ev-head {
+    display: grid;
+    grid-template-columns: 10px 106px 96px minmax(0, 1fr) 56px;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 8.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 600;
+  }
+  .ev-row {
+    display: grid;
+    grid-template-columns: 10px 106px 96px minmax(0, 1fr) 56px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--cream);
+  }
+  .ev-row:last-child { border-bottom: 0; }
+  .ev-row:hover { background: var(--panel-2); }
+  .ev-addr { color: var(--muted); font-size: 10px; }
+  .ev-call { color: #D8D0BC; }
+  .ev-vals { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: wrap; color: var(--cream); }
+  .ev-vals .vl { color: var(--dim); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ev-vals .vs { color: var(--dim); font-size: 9px; }
+  .ev-flag { text-align: right; }
+  .ev-flag .chip { padding: 2px 5px; font-size: 8.5px; }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin-top: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  footer .fleft { display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; }
+  footer .fright { margin-left: auto; display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; }
+  footer b { color: var(--cream); font-weight: 500; }
+  footer .sep { color: var(--dim); }
+
+  noscript .banner { display: flex; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1080px) {
+    #telemetry, #economy { grid-column: span 6; }
+    #audit, #evidence { grid-column: span 6; }
+  }
+  @media (max-width: 860px) {
+    #telemetry, #economy, #audit, #evidence { grid-column: span 12; }
+    .telemetry-body { grid-template-columns: 190px minmax(0, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .shell { padding: 12px 12px 22px; }
+    main { display: flex; flex-direction: column; }
+    #telemetry, #economy, #audit, #evidence, #history { grid-column: auto; width: 100%; }
+    .telemetry-body { grid-template-columns: minmax(0, 1fr); }
+    .gauge-col { border-right: 0; border-bottom: 1px solid var(--line-soft); padding: 10px 12px; }
+    #gauge { height: 130px; max-width: 260px; }
+    .tiles { grid-template-columns: minmax(0, 1fr); }
+    .spark-grid { grid-template-columns: minmax(0, 1fr); }
+    .verdict { gap: 12px; }
+    .vgen { margin-left: 0; text-align: left; width: 100%; }
+    .vword { font-size: 23px; }
+    .ev-head { display: none; }
+    .ev-row { grid-template-columns: 10px minmax(0, 1fr) 56px; row-gap: 3px; padding: 7px 12px; }
+    .ev-row .ev-addr { grid-column: 2; }
+    .ev-row .ev-call { grid-column: 2; }
+    .ev-row .ev-vals { grid-column: 2; }
+    .ev-row .ev-flag { grid-column: 3; grid-row: 1; align-self: start; }
+    .finding > summary { padding: 7px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <circle cx="16" cy="16" r="12.5" fill="none" stroke="#FF7A1A" stroke-width="2.4"></circle>
+        <g stroke="#FF7A1A" stroke-width="1.5" opacity="0.8">
+          <path d="M16 4.2v7.6M16 20.2v7.6M4.2 16h7.6M20.2 16h7.6"></path>
+          <path d="M7.6 7.6l5.4 5.4M19 19l5.4 5.4M24.4 7.6L19 13M13 19l-5.4 5.4" opacity="0.5"></path>
+        </g>
+        <circle cx="16" cy="16" r="2.8" fill="#F2EAD3"></circle>
+      </svg>
+      <div class="brand-text">
+        <span class="wordmark">Squeek<b>watch</b></span>
+        <span class="tagline">hamster economy observatory</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="chip" id="hudMode"><span class="dot idle"></span><span id="hudModeText">connecting</span></span>
+      <span class="chip" id="hudSource"><span class="dot idle"></span><span id="hudSourceText">source</span></span>
+      <span class="clock" id="clock">--:--:--Z</span>
+      <button class="btn" id="btnRefresh" type="button" title="Fetch a fresh snapshot now">refresh</button>
+      <button class="btn ghost" id="btnPause" type="button" aria-pressed="false" title="Pause the 5 second sampling loop">pause</button>
+      <a class="btn ghost" href="testdrive.html" title="Wallet smoke test page">testdrive</a>
+    </div>
+  </header>
+
+  <section class="verdict" id="verdict" data-verdict="UNKNOWN" aria-live="polite" aria-atomic="true">
+    <span class="vmark" id="vSymbol" aria-hidden="true">?</span>
+    <div class="vbody">
+      <div class="vword" id="vWord">connecting</div>
+      <div class="vsub" id="vCount">waiting for the first snapshot</div>
+    </div>
+    <div class="vgen">
+      <span class="lbl">generated</span>
+      <span class="stamp" id="vStamp">--</span>
+    </div>
+    <div class="vchips" id="vChips"></div>
+  </section>
+
+  <div class="banner" id="banner" hidden>
+    <span class="banner-tag" id="bannerTag">notice</span>
+    <span id="bannerText"></span>
+  </div>
+
+  <noscript>
+    <div class="banner is-fail">
+      <span class="banner-tag">no script</span>
+      <span>This dashboard renders live data in the browser. Enable JavaScript to use it, or read the JSON directly from <b>/api/snapshot</b>.</span>
+    </div>
+  </noscript>
+
+  <main>
+    <section class="panel" id="telemetry" aria-labelledby="telemetry-title">
+      <div class="panel-head">
+        <h2 id="telemetry-title">Hamster telemetry</h2>
+        <div class="head-right">
+          <span class="chip" id="chipProv"><span class="dot idle" id="chipProvDot"></span><span id="chipProvText">provenance</span></span>
+          <span class="chip" id="chipCore"><span class="dot idle" id="chipCoreDot"></span><span id="chipCoreText">core</span></span>
+        </div>
+      </div>
+      <div class="telemetry-body">
+        <div class="gauge-col">
+          <canvas id="gauge" height="116" role="img" aria-label="Wheel speed gauge, 0 to 120 revolutions per minute"></canvas>
+          <div class="gauge-readout">
+            <b id="rpmValue">--</b>
+            <span class="rpm-unit">RPM</span>
+            <span class="gauge-scale">scale 0 - 120</span>
+          </div>
+        </div>
+        <dl class="stats">
+          <div class="stat">
+            <dt>Speed</dt>
+            <dd id="stSpeed">--</dd>
+            <span class="stat-sub">mm / s</span>
+          </div>
+          <div class="stat">
+            <dt>Distance</dt>
+            <dd id="stDistance">--</dd>
+            <span class="stat-sub">odometer</span>
+          </div>
+          <div class="stat">
+            <dt>Work units</dt>
+            <dd id="stWork">--</dd>
+            <span class="stat-sub">cumulative</span>
+          </div>
+          <div class="stat">
+            <dt>Freshness</dt>
+            <dd id="stFresh">--</dd>
+            <span class="stat-sub" id="stFreshSub">stale after --</span>
+          </div>
+          <div class="stat">
+            <dt>Oracle</dt>
+            <dd id="stOracle" class="sm">--</dd>
+            <span class="stat-sub">settlement queue</span>
+          </div>
+          <div class="stat">
+            <dt>Settlement</dt>
+            <dd id="stSettlement" class="sm">--</dd>
+            <span class="stat-sub" id="stSettlementSub">queued rounds</span>
+          </div>
+        </dl>
+      </div>
+      <div class="panel-foot" id="telemFoot">observed -- &middot; received --</div>
+    </section>
+
+    <section class="panel" id="economy" aria-labelledby="economy-title">
+      <div class="panel-head">
+        <h2 id="economy-title">Chain and economy</h2>
+        <div class="head-right">
+          <span class="chip" id="chipChain"><span class="dot idle"></span><span id="chipChainText">chain</span></span>
+          <span class="chip" id="chipStage"><span class="dot idle"></span><span id="chipStageText">lifecycle</span></span>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile">
+          <span class="lbl">Block height</span>
+          <div class="big"><span id="tBlock">--</span><span class="unit">blocks</span></div>
+          <div class="bar"><i id="tBlockBar" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tBlockLeft">--</span><span id="tBlockRight">--</span></div>
+        </div>
+        <div class="tile">
+          <span class="lbl">Rounds settled</span>
+          <div class="big"><span id="tRounds">--</span><span class="unit">/ --</span></div>
+          <div class="bar"><i id="tRoundsBar" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tRoundsLeft">settled</span><span id="tRoundsRight">--</span></div>
+        </div>
+        <div class="tile">
+          <span class="lbl">Live supply</span>
+          <div class="big"><span id="tSupply">--</span><span class="unit">SQK</span></div>
+          <div class="bar"><i id="tSupplyBar" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tSupplyLeft">--</span><span id="tSupplyRight">--</span></div>
+        </div>
+        <div class="tile">
+          <span class="lbl">Squeeks NFT</span>
+          <div class="big"><span id="tNft">--</span><span class="unit">live / issued</span></div>
+          <div class="bar"><i id="tNftBar" class="is-green" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tNftLeft">--</span><span id="tNftRight">--</span></div>
+        </div>
+        <div class="tile">
+          <span class="lbl">Next halving</span>
+          <div class="big"><span id="tHalving">--</span><span class="unit">blocks</span></div>
+          <div class="bar"><i id="tHalvingBar" class="is-amber" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tHalvingLeft">--</span><span id="tHalvingRight">--</span></div>
+        </div>
+        <div class="tile">
+          <span class="lbl">Staked</span>
+          <div class="big"><span id="tStaked">--</span><span class="unit">SQK</span></div>
+          <div class="tile-sub" id="tStakedSub">--</div>
+          <div class="bar"><i id="tStakedBar" class="is-green" style="width:0%"></i></div>
+          <div class="bar-nums"><span id="tStakedLeft">--</span><span id="tStakedRight">--</span></div>
+        </div>
+      </div>
+      <div class="stack-strip" id="stackStrip">--</div>
+    </section>
+
+    <section class="panel" id="history" aria-labelledby="history-title">
+      <div class="panel-head">
+        <h2 id="history-title">History</h2>
+        <div class="head-right">
+          <span class="chip" id="chipSamples"><span class="dot orange"></span><span id="chipSamplesText">0 / 60 samples</span></span>
+          <span class="chip"><span id="chipWindow">window 5 min</span></span>
+        </div>
+      </div>
+      <div class="spark-grid">
+        <div class="spark-cell">
+          <div class="spark-head">
+            <span class="lbl">Delta work units / sample</span>
+            <span class="val" id="sparkWorkVal">--</span>
+            <span class="range" id="sparkWorkRange">--</span>
+          </div>
+          <canvas id="sparkWork" height="72" role="img" aria-label="Work units produced per five second sample, last sixty samples"></canvas>
+        </div>
+        <div class="spark-cell">
+          <div class="spark-head">
+            <span class="lbl">Wheel speed / sample</span>
+            <span class="val" id="sparkRpmVal">--</span>
+            <span class="range" id="sparkRpmRange">--</span>
+          </div>
+          <canvas id="sparkRpm" height="72" role="img" aria-label="Wheel revolutions per minute per five second sample, last sixty samples"></canvas>
+        </div>
+      </div>
+      <div class="panel-foot" id="historyFoot">Sampled every 5 s into a 60 point ring buffer. The buffer survives reloads through localStorage.</div>
+    </section>
+
+    <section class="panel" id="audit" aria-labelledby="audit-title">
+      <div class="panel-head">
+        <h2 id="audit-title">Invariant audit</h2>
+        <div class="head-right">
+          <span class="chip" id="chipAuditScore"><span class="dot idle"></span><span id="chipAuditScoreText">score --</span></span>
+          <button class="btn ghost" id="btnExpand" type="button" aria-expanded="false">expand</button>
+        </div>
+      </div>
+      <div class="findings" id="auditList">
+        <div class="empty">Waiting for the first audit pass.</div>
+      </div>
+      <div class="panel-foot" id="auditFoot">Independently recomputed from public API fields. No write access, no wallet, no signature.</div>
+    </section>
+
+    <section class="panel" id="evidence" aria-labelledby="evidence-title">
+      <div class="panel-head">
+        <h2 id="evidence-title">Chain evidence</h2>
+        <div class="head-right">
+          <span class="chip" id="chipRpc"><span class="dot idle"></span><span id="chipRpcText">rpc</span></span>
+        </div>
+      </div>
+      <div class="ev-head" id="evHead">
+        <span></span><span>contract</span><span>method</span><span>on-chain value vs api value</span><span>check</span>
+      </div>
+      <div id="evBody">
+        <div class="empty">No chain probes yet.</div>
+      </div>
+      <div class="panel-foot" id="evFoot">Read-only eth_call plus eth_chainId. Contract addresses come from the economy snapshot.</div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="fleft">
+      <span>SQUEEKWATCH</span>
+      <span class="sep">/</span>
+      <span id="fRepo">repo: <span class="dim">local checkout</span></span>
+      <span class="sep">/</span>
+      <span id="fCommit">commit: <span class="dim">--</span></span>
+      <span class="sep">/</span>
+      <span id="fStamp">snapshot: --</span>
+    </div>
+    <div class="fright">
+      <span>data: public APIs &middot; verification: independent</span>
+      <span class="sep">/</span>
+      <span id="fLinks"><a href="testdrive.html">testdrive</a></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = 'https://api.squeekchain.com';
+  var SAMPLE_MS = 5000;
+  var MAX_SAMPLES = 60;
+  var HISTORY_KEY = 'squeekwatch.history.v1';
+  var CACHE_KEY = 'squeekwatch.cache.v1';
+  var BLOCK_TIME_S = 12;
+  var GAUGE_MAX = 120;
+  var COLLECTION_SIZE = 9999;
+
+  var state = {
+    mode: 'boot',          // boot | server | local | cached | failed
+    snapshot: null,
+    audit: null,
+    history: [],
+    auditKey: null,
+    busy: false,
+    paused: false,
+    timer: null,
+    repo: null,
+    commit: null,
+    version: null,
+    lastError: null,
+    staleFlag: null,
+    openFindings: null
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ------------------------------------------------------------------ utils */
+
+  function text(id, value) {
+    var node = $(id);
+    if (node) node.textContent = value;
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function group(value) {
+    var raw = String(value == null ? '' : value).trim();
+    var neg = raw.charAt(0) === '-';
+    if (neg) raw = raw.slice(1);
+    var out = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return neg ? '-' + out : out;
+  }
+
+  function num(value, fallback) {
+    var n = Number(value);
+    return Number.isFinite(n) ? n : (fallback === undefined ? 0 : fallback);
+  }
+
+  function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+  function trimZeros(s) {
+    return s.indexOf('.') >= 0 ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
+  }
+
+  function compactNumber(n) {
+    if (!Number.isFinite(n)) return '--';
+    var abs = Math.abs(n);
+    if (abs >= 1e12) return trimZeros((n / 1e12).toFixed(2)) + 'T';
+    if (abs >= 1e9) return trimZeros((n / 1e9).toFixed(2)) + 'B';
+    if (abs >= 1e6) return trimZeros((n / 1e6).toFixed(2)) + 'M';
+    if (abs >= 1e3) return trimZeros((n / 1e3).toFixed(1)) + 'K';
+    return trimZeros(n.toFixed(2));
+  }
+
+  function bigOf(value) {
+    if (value == null) return null;
+    var raw = String(value).trim();
+    if (!/^-?\d+$/.test(raw)) return null;
+    try { return BigInt(raw); } catch (err) { return null; }
+  }
+
+  /** Split a base-unit integer into grouped whole units plus a short decimal tail. */
+  function tokenInfo(raw, decimals) {
+    var dec = decimals == null ? 18 : num(decimals, 18);
+    var value = bigOf(raw);
+    if (value == null) return null;
+    var negative = value < 0n;
+    if (negative) value = -value;
+    var base = 10n ** BigInt(dec);
+    var whole = value / base;
+    var frac = (value % base).toString().padStart(dec, '0').replace(/0+$/, '');
+    var wholeStr = group(whole.toString());
+    var wholeNum = Number(whole);
+    var compact = compactNumber(wholeNum);
+    return {
+      whole: wholeStr,
+      frac: frac,
+      wholeNum: wholeNum,
+      compact: compact,
+      display: compact,
+      exact: wholeStr + (frac ? '.' + frac.slice(0, 6) : '')
+    };
+  }
+
+  function tokenText(raw, decimals) {
+    var info = tokenInfo(raw, decimals);
+    return info ? info.compact : '--';
+  }
+
+  function percentOf(part, whole, digits) {
+    var p = num(part), w = num(whole);
+    if (!(w > 0)) return 0;
+    var pct = (p / w) * 100;
+    var places = digits == null ? (pct < 0.1 ? 3 : 2) : digits;
+    return Number(pct.toFixed(places));
+  }
+
+  function utcStamp(iso) {
+    if (!iso) return '--';
+    var date = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(date.getTime())) return String(iso);
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return date.getUTCFullYear() + '-' + pad(date.getUTCMonth() + 1) + '-' + pad(date.getUTCDate()) +
+      ' ' + pad(date.getUTCHours()) + ':' + pad(date.getUTCMinutes()) + ':' + pad(date.getUTCSeconds()) + 'Z';
+  }
+
+  function dayStamp(date) {
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return date.getUTCFullYear() + '-' + pad(date.getUTCMonth() + 1) + '-' + pad(date.getUTCDate());
+  }
+
+  function ageSeconds(iso) {
+    if (!iso) return null;
+    var t = new Date(iso).getTime();
+    if (!Number.isFinite(t)) return null;
+    return Math.max(0, (Date.now() - t) / 1000);
+  }
+
+  function agoText(seconds) {
+    if (seconds == null) return '--';
+    if (seconds < 90) return Math.round(seconds) + ' s ago';
+    if (seconds < 5400) return Math.round(seconds / 60) + ' min ago';
+    if (seconds < 172800) return (seconds / 3600).toFixed(1) + ' h ago';
+    return (seconds / 86400).toFixed(1) + ' d ago';
+  }
+
+  function shortAddr(addr) {
+    var raw = String(addr == null ? '' : addr);
+    if (raw.length <= 12) return raw || '--';
+    return raw.slice(0, 6) + '...' + raw.slice(-4);
+  }
+
+  function shortHash(hash) {
+    var raw = String(hash == null ? '' : hash);
+    if (raw.length <= 14) return raw || '--';
+    return raw.slice(0, 8) + '...' + raw.slice(-6);
+  }
+
+  function describeError(err) {
+    if (!err) return 'unknown error';
+    var message = err.message || String(err);
+    if (/aborted|AbortError/i.test(message)) return 'request timed out';
+    if (/Failed to fetch|NetworkError|load failed/i.test(message)) return 'network unreachable';
+    return message;
+  }
+
+  /* ------------------------------------------------------------- transport */
+
+  var params = new URLSearchParams(location.search);
+  var forward = new URLSearchParams();
+  ['offline', 'chain', 'community'].forEach(function (key) {
+    if (params.has(key)) forward.set(key, params.get(key) || '');
+  });
+  var QUERY = forward.toString() ? '?' + forward.toString() : '';
+  var IS_FILE = location.protocol === 'file:';
+
+  function jsonFetch(url, timeoutMs) {
+    var ms = timeoutMs || 9000;
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    var options = { cache: 'no-store', headers: { accept: 'application/json' } };
+    if (ctrl) options.signal = ctrl.signal;
+    return fetch(url, options).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' from ' + url);
+      return res.json();
+    }).finally(function () { clearTimeout(timer); });
+  }
+
+  function loadServer() {
+    return Promise.all([
+      jsonFetch('/api/snapshot' + QUERY, 11000),
+      jsonFetch('/api/audit' + QUERY, 11000)
+    ]).then(function (pair) {
+      var snap = pair[0], audit = pair[1];
+      if (!snap || !snap.status || !snap.economy) throw new Error('snapshot payload incomplete');
+      return { snap: snap, audit: audit };
+    });
+  }
+
+  function loadDirect() {
+    return Promise.all([
+      jsonFetch(API + '/v1/status', 9000),
+      jsonFetch(API + '/v1/economy/state', 9000)
+    ]).then(function (pair) {
+      var snap = {
+        fetchedAt: new Date().toISOString(),
+        source: 'public-api',
+        status: pair[0],
+        economy: pair[1],
+        community: null,
+        chain: null
+      };
+      return { snap: snap, audit: localAudit(snap) };
+    });
+  }
+
+  function loadRepoInfo() {
+    return Promise.all([
+      jsonFetch('/healthz', 2500).catch(function () { return null; }),
+      jsonFetch('commit.json', 2500).catch(function () { return null; })
+    ]).then(function (pair) {
+      var health = pair[0], meta = pair[1];
+      if (health && typeof health === 'object') {
+        if (health.repository) state.repo = String(health.repository);
+        if (health.commit) state.commit = String(health.commit);
+        if (health.version) state.version = String(health.version);
+      }
+      if (!state.repo) {
+        var host = location.hostname || '';
+        if (/\.github\.io$/i.test(host)) {
+          var owner = host.split('.')[0];
+          var seg = location.pathname.split('/').filter(Boolean)[0];
+          var repoName = seg && seg.indexOf('.') < 0 ? seg : owner + '.github.io';
+          state.repo = 'https://github.com/' + owner + '/' + repoName;
+        }
+      }
+      if (!state.commit && meta) {
+        var value = meta.commit || meta.sha || null;
+        if (value) state.commit = String(value);
+      }
+      if (!state.repo && meta && meta.repository) state.repo = String(meta.repository);
+      renderFooter(state.snapshot);
+    });
+  }
+
+  /* --------------------------------------------------- local audit (API only) */
+
+  function localAudit(snapshot) {
+    var status = snapshot.status || {};
+    var economy = snapshot.economy || {};
+    var measurement = status.measurement || {};
+    var anchor = (status.builder && status.builder.anchor) || {};
+    var queue = status.settlementQueue || {};
+    var module = (status.modules && status.modules[0]) || null;
+    var supply = economy.supply || {};
+    var schedule = economy.schedule || {};
+    var nft = economy.nft || {};
+    var staking = economy.staking || {};
+    var life = economy.lifecycle || {};
+    var chain = economy.chain || {};
+
+    var findings = [];
+    function add(id, severity, title, detail, extra) {
+      var finding = { id: id, severity: severity, source: 'api', title: title, detail: detail };
+      if (extra) {
+        if (extra.expected !== undefined) finding.expected = extra.expected;
+        if (extra.observed !== undefined) finding.observed = extra.observed;
+      }
+      findings.push(finding);
+    }
+
+    var live = bigOf(supply.liveSupplyBaseUnits);
+    var minted = bigOf(supply.totalMintedBaseUnits);
+    var burned = bigOf(supply.totalBurnedBaseUnits);
+    var premint = bigOf(supply.premintBaseUnits);
+    var miningMinted = bigOf(supply.miningMintedBaseUnits);
+    var cap = bigOf(supply.capBaseUnits);
+    var unminted = bigOf(supply.unmintedCapacityBaseUnits);
+
+    if (minted !== null && live !== null && burned !== null) {
+      var expectedLive = minted - burned;
+      add(
+        'local.supply.burn',
+        live === expectedLive ? 'ok' : 'fail',
+        'Live supply equals total minted minus burned',
+        'minted ' + tokenText(minted, 18) + ' - burned ' + tokenText(burned, 18) + ' = ' + tokenText(live, 18) + ' SQK',
+        { expected: expectedLive.toString(), observed: live.toString() }
+      );
+    } else {
+      add('local.supply.burn', 'warn', 'Live supply identity skipped', 'The API did not return minted, live or burned totals.');
+    }
+
+    if (premint !== null && miningMinted !== null && minted !== null) {
+      var expectedMint = premint + miningMinted;
+      add(
+        'local.supply.mints',
+        expectedMint === minted ? 'ok' : 'fail',
+        'Total minted equals premint plus mining minted',
+        'premint ' + tokenText(premint, 18) + ' + mining ' + tokenText(miningMinted, 18) + ' = ' + tokenText(minted, 18) + ' SQK',
+        { expected: expectedMint.toString(), observed: minted.toString() }
+      );
+    } else {
+      add('local.supply.mints', 'warn', 'Mint split identity skipped', 'The API did not return premint, mining minted and total minted.');
+    }
+
+    if (live !== null && cap !== null) {
+      add(
+        'local.supply.cap',
+        live <= cap ? 'ok' : 'fail',
+        'Live supply stays within the 2.1B cap',
+        tokenText(live, 18) + ' live of ' + tokenText(cap, 18) + ' SQK cap (' + percentOf(Number(live), Number(cap)) + '%)'
+      );
+    } else {
+      add('local.supply.cap', 'warn', 'Cap check skipped', 'Live supply or cap missing from the payload.');
+    }
+
+    if (live !== null && unminted !== null && cap !== null) {
+      add(
+        'local.supply.capacity',
+        live + unminted === cap ? 'ok' : 'fail',
+        'Live supply plus unminted capacity equals the cap',
+        tokenText(live, 18) + ' live + ' + tokenText(unminted, 18) + ' unminted = ' + tokenText(live + unminted, 18) + ' SQK'
+      );
+    } else {
+      add('local.supply.capacity', 'warn', 'Capacity identity skipped', 'Unminted capacity missing from the payload.');
+    }
+
+    var issued = bigOf(nft.issued);
+    var nftLive = bigOf(nft.live);
+    var nftBurned = bigOf(nft.burned);
+    if (issued !== null && nftLive !== null && nftBurned !== null) {
+      var expectedNft = issued - nftBurned;
+      add(
+        'local.nft.identity',
+        expectedNft === nftLive ? 'ok' : 'fail',
+        'NFT live supply equals issued minus burned',
+        'issued ' + group(issued.toString()) + ' - burned ' + group(nftBurned.toString()) + ' = ' + group(nftLive.toString()) + ' live'
+      );
+    } else {
+      add('local.nft.identity', 'warn', 'NFT identity skipped', 'NFT issued, live or burned counter missing.');
+    }
+
+    if (issued !== null) {
+      add(
+        'local.nft.cap',
+        issued <= BigInt(COLLECTION_SIZE) ? 'ok' : 'fail',
+        'NFT issuance respects the 9999 collection cap',
+        group(issued.toString()) + ' issued of ' + group(String(COLLECTION_SIZE)) + ' collection slots',
+        { expected: String(COLLECTION_SIZE), observed: issued.toString() }
+      );
+    } else {
+      add('local.nft.cap', 'warn', 'NFT cap check skipped', 'NFT issued counter missing.');
+    }
+
+    var settled = num(anchor.settledThroughRound, NaN);
+    var current = num(life.currentRound, NaN);
+    var processed = num((economy.mining || {}).processedThroughRound, NaN);
+    if (Number.isFinite(settled) && Number.isFinite(current)) {
+      var orderOk = settled <= current && (!Number.isFinite(processed) || processed <= current);
+      add(
+        'local.rounds.order',
+        orderOk ? 'ok' : 'fail',
+        'Settled and processed rounds never overtake the current round',
+        'settled ' + settled + ', processed ' + (Number.isFinite(processed) ? processed : 'n/a') + ', current ' + current
+      );
+    } else {
+      add('local.rounds.order', 'warn', 'Round ordering skipped', 'Settled or current round missing.');
+    }
+
+    var submission = queue.latestSubmission || null;
+    if (submission && Number.isFinite(settled)) {
+      var submitted = num(submission.settledThroughRound, NaN);
+      var previous = num(submission.previousSettledThroughRound, NaN);
+      var linked = Number.isFinite(submitted) && submitted >= settled &&
+        (!Number.isFinite(previous) || previous >= settled);
+      add(
+        'local.settlement.linking',
+        linked ? 'ok' : 'fail',
+        'Queued settlement links onto the last confirmed anchor',
+        'anchor ' + settled + ', submission ' + (Number.isFinite(submitted) ? submitted : 'n/a') +
+        ' from ' + (Number.isFinite(previous) ? previous : 'n/a') + ' (' + (queue.state || 'unknown') + ')'
+      );
+    } else {
+      add('local.settlement.linking', 'warn', 'Settlement linking skipped', 'No queued settlement submission to compare with the anchor.');
+    }
+
+    var staleAfter = num(measurement.staleAfterSeconds, 120);
+    var age = ageSeconds(measurement.receivedAt || measurement.observedAt);
+    if (age != null) {
+      var fresh = age <= staleAfter && measurement.freshness !== 'stale';
+      add(
+        'local.telemetry.freshness',
+        fresh ? 'ok' : 'fail',
+        'Wheel telemetry is inside its staleness window',
+        'last sample ' + Math.round(age) + ' s ago, window ' + staleAfter + ' s, freshness flag "' + (measurement.freshness || 'n/a') + '"'
+      );
+    } else {
+      add('local.telemetry.freshness', 'warn', 'Freshness check skipped', 'Telemetry timestamps missing.');
+    }
+
+    if (module) {
+      var ready = module.state === 'ready';
+      add(
+        'local.telemetry.provenance',
+        ready ? 'ok' : 'warn',
+        'Wheel counter module is ready and reports hardware provenance',
+        module.moduleType + ' v' + module.moduleVersion + ' state "' + module.state + '", provenance "' +
+        (module.provenance || measurement.provenance || 'n/a') + '"'
+      );
+    } else {
+      add('local.telemetry.provenance', 'warn', 'Wheel counter module missing', 'The status payload listed no hardware modules.');
+    }
+
+    var scheduleIssued = bigOf(schedule.issuedBaseUnits);
+    if (scheduleIssued !== null && miningMinted !== null) {
+      add(
+        'local.schedule.issued',
+        scheduleIssued === miningMinted ? 'ok' : 'fail',
+        'Schedule issued total matches mining minted',
+        'schedule ' + tokenText(scheduleIssued, 18) + ' vs mining ' + tokenText(miningMinted, 18) + ' SQK'
+      );
+    } else {
+      add('local.schedule.issued', 'warn', 'Schedule issued total skipped', 'Schedule or mining issued value missing.');
+    }
+
+    var halving = num(schedule.halvingBlocks, NaN);
+    var closed = num(schedule.closedThroughBlock, NaN);
+    var rate = bigOf(schedule.firstPeriodRateBaseUnits);
+    if (Number.isFinite(halving) && Number.isFinite(closed) && rate !== null) {
+      add(
+        'local.schedule.halving',
+        halving > closed && rate > 0n ? 'ok' : 'fail',
+        'Halving window is still open and the first period rate is positive',
+        'closed ' + group(closed) + ' of ' + group(halving) + ' blocks, first period rate ' + tokenText(rate, 18) + ' SQK'
+      );
+    } else {
+      add('local.schedule.halving', 'warn', 'Halving window skipped', 'Schedule fields missing from the payload.');
+    }
+
+    if (chain.chainId != null) {
+      add(
+        'local.chain.sepolia',
+        String(chain.chainId) === '11155111' ? 'ok' : 'fail',
+        'Economy is deployed on the Sepolia testnet',
+        'chainId ' + String(chain.chainId) + ' (target "' + (chain.target || 'n/a') + '"), indexed through block ' +
+        group(chain.indexedThroughBlock || 'n/a')
+      );
+    } else {
+      add('local.chain.sepolia', 'warn', 'Chain identity skipped', 'chainId missing from the economy payload.');
+    }
+
+    if (life.stage != null) {
+      add(
+        'local.lifecycle.guard',
+        life.stage === 'active' && life.paused !== true ? 'ok' : 'warn',
+        'Economy lifecycle is active and not paused',
+        'stage "' + life.stage + '", paused ' + String(life.paused === true) + ', start round ' + (life.startRound || 'n/a')
+      );
+    } else {
+      add('local.lifecycle.guard', 'warn', 'Lifecycle check skipped', 'Lifecycle block missing.');
+    }
+
+    if (staking && staking.paused !== undefined) {
+      add(
+        'local.staking.guard',
+        staking.paused === true ? 'warn' : 'ok',
+        'Staking pause flag is readable',
+        'staking paused ' + String(staking.paused === true) + ', total staked ' + tokenText(staking.totalStakedBaseUnits, 18) + ' SQK'
+      );
+    }
+
+    var pass = 0, warn = 0, fail = 0;
+    findings.forEach(function (f) {
+      if (f.severity === 'ok') pass++;
+      else if (f.severity === 'warn') warn++;
+      else fail++;
+    });
+    var total = findings.length;
+    var verdict = fail > 0 ? 'FAILED' : warn > 0 ? 'DEGRADED' : 'VERIFIED';
+    return {
+      generatedAt: new Date().toISOString(),
+      verdict: verdict,
+      pass: pass,
+      warn: warn,
+      fail: fail,
+      skipped: 0,
+      total: total,
+      score: total ? Math.round((pass / total) * 100) : 0,
+      findings: findings,
+      chain: null,
+      mode: 'local'
+    };
+  }
+
+  /* -------------------------------------------------------------- rendering */
+
+  function setChip(id, cls) {
+    var chip = $(id);
+    if (!chip) return;
+    var dot = chip.querySelector('.dot');
+    if (!dot) return;
+    dot.className = 'dot ' + (cls || 'idle');
+  }
+
+  function renderVerdict(snapshot, audit) {
+    var verdict = (audit && audit.verdict) || 'UNKNOWN';
+    var bar = $('verdict');
+    bar.dataset.verdict = verdict;
+    var symbols = { VERIFIED: '\u2713', DEGRADED: '!', FAILED: '\u00d7', UNKNOWN: '?' };
+    text('vSymbol', symbols[verdict] || '?');
+    text('vWord', verdict);
+    var pass = num(audit && audit.pass, 0);
+    var warn = num(audit && audit.warn, 0);
+    var fail = num(audit && audit.fail, 0);
+    var total = num(audit && audit.total, 0);
+    var parts = ['<b>' + pass + '/' + total + '</b> checks passed'];
+    if (warn) parts.push('<span style="color:var(--amber)">' + warn + ' warn</span>');
+    if (fail) parts.push('<span style="color:#E39A93">' + fail + ' fail</span>');
+    if (audit && typeof audit.score === 'number') parts.push('score ' + audit.score);
+    var sub = $('vCount');
+    if (sub) sub.innerHTML = parts.join(' &middot; ');
+    text('vStamp', utcStamp(audit && audit.generatedAt));
+
+    var chips = [];
+    if (state.mode === 'server') {
+      chips.push(chipHtml('mode', 'server api', 'ok'));
+      var src = snapshot && snapshot.source ? String(snapshot.source) : 'unknown';
+      chips.push(chipHtml('data', src === 'fixtures' ? 'fixtures' : src, src === 'fixtures' ? 'warn' : 'ok'));
+    } else if (state.mode === 'local') {
+      chips.push(chipHtml('mode', 'local verification (API only)', 'warn'));
+      chips.push(chipHtml('data', 'public api', 'ok'));
+    } else if (state.mode === 'cached') {
+      chips.push(chipHtml('mode', 'cached snapshot', 'warn'));
+    } else {
+      chips.push(chipHtml('mode', 'no data', 'fail'));
+    }
+    var probes = snapshot && snapshot.chain && Array.isArray(snapshot.chain.probes) ? snapshot.chain.probes.length : 0;
+    chips.push(chipHtml('probes', probes ? probes + ' rpc probes' : 'no rpc probes', probes ? 'ok' : 'idle'));
+    if (snapshot && snapshot.community) chips.push(chipHtml('community', 'community api', 'ok'));
+    var chipBox = $('vChips');
+    if (chipBox) chipBox.innerHTML = chips.join('');
+    updateHud(snapshot);
+    document.title = verdict + ' ' + pass + '/' + total + ' - Squeekwatch';
+  }
+
+  function chipHtml(label, value, tone) {
+    var cls = 'chip' + (tone === 'warn' ? ' is-warn' : tone === 'fail' ? ' is-fail' : tone === 'ok' ? ' is-live' : '');
+    return '<span class="' + cls + '"><span class="dot ' + (tone || 'idle') + '"></span>' + esc(label) + ' <b>' + esc(value) + '</b></span>';
+  }
+
+  function updateHud(snapshot) {
+    var modeText = state.mode === 'server' ? 'server api' : state.mode === 'local' ? 'client side' :
+      state.mode === 'cached' ? 'cached' : state.mode === 'failed' ? 'offline' : 'connecting';
+    text('hudModeText', modeText);
+    setChip('hudMode', state.mode === 'server' ? 'ok' : state.mode === 'local' ? 'warn' : state.mode === 'failed' ? 'fail' : 'idle');
+
+    var source = snapshot && snapshot.source ? snapshot.source : '--';
+    text('hudSourceText', source === 'fixtures' ? 'fixtures' : source);
+    setChip('hudSource', source === 'fixtures' ? 'warn' : source === 'live' || source === 'public-api' ? 'ok' : 'idle');
+
+    if (state.mode === 'local') {
+      showBanner('notice', 'Client mode: /api is unavailable, so this page fetched the public APIs directly and ran a reduced invariant set. On-chain RPC probes are off; open the local server (npm start) for the full audit.');
+    } else if (snapshot && snapshot.source === 'fixtures') {
+      showBanner('notice', 'Offline fixtures: these numbers are a recorded snapshot of the public APIs, not a live reading.');
+    } else if (IS_FILE) {
+      showBanner('notice', 'Opened from file://: browsers block cross-origin API calls from local files. Run npm start, or use the published GitHub Pages build, for live data.');
+    } else {
+      hideBanner();
+    }
+  }
+
+  function showBanner(tag, message, tone) {
+    var banner = $('banner');
+    var tagEl = $('bannerTag');
+    var body = $('bannerText');
+    if (!banner || !tagEl || !body) return;
+    tagEl.textContent = tag;
+    body.textContent = message;
+    banner.className = 'banner' + (tone === 'fail' ? ' is-fail' : '');
+    banner.hidden = false;
+  }
+
+  function hideBanner() {
+    var banner = $('banner');
+    if (banner) banner.hidden = true;
+  }
+
+  function renderTelemetry(snapshot) {
+    var status = (snapshot && snapshot.status) || {};
+    var m = status.measurement || {};
+    var module = (status.modules && status.modules[0]) || null;
+    var queue = status.settlementQueue || {};
+
+    var rpm = num(m.rpmMilli, 0) / 1000;
+    var staleAfter = num(m.staleAfterSeconds, 120);
+    var age = ageSeconds(m.receivedAt || m.observedAt);
+    var stale = (age != null && age > staleAfter) || m.freshness === 'stale';
+
+    text('rpmValue', rpm.toFixed(1));
+    var rpmEl = $('rpmValue');
+    if (rpmEl) rpmEl.className = stale ? 'is-stale' : '';
+    drawGauge(rpm, stale);
+    state.staleFlag = stale;
+
+    text('stSpeed', num(m.speedMmPerSecond, 0).toFixed(2));
+    text('stDistance', formatDistance(num(m.distanceMm, 0)));
+    text('stWork', group(m.cumulativeWorkUnits == null ? 0 : m.cumulativeWorkUnits));
+    text('stFresh', age == null ? '--' : Math.round(age) + ' s');
+    var freshEl = $('stFresh');
+    if (freshEl) freshEl.className = stale ? 'is-stale' : '';
+    var freshSub = $('stFreshSub');
+    if (freshSub) {
+      freshSub.textContent = 'stale after ' + staleAfter + ' s';
+      freshSub.className = 'stat-sub' + (stale ? ' is-stale' : '');
+    }
+    text('stOracle', (status.oracle && status.oracle.state) || 'n/a');
+    text('stSettlement', queue.state || 'n/a');
+    var buffered = queue.buffered || {};
+    text('stSettlementSub', (buffered.roundCount != null ? buffered.roundCount : '0') + ' queued round(s)');
+
+    var provenance = m.provenance || (module && module.provenance) || 'unknown';
+    text('chipProvText', provenance);
+    setChip('chipProv', provenance === 'hardware' ? 'ok' : 'warn');
+    text('chipCoreText', (m.coreStatus || 'unknown') + (module && module.state ? ' / ' + module.state : ''));
+    setChip('chipCore', m.coreStatus === 'IDLE' || m.coreStatus === 'RUNNING' ? 'ok' : 'warn');
+
+    var foot = 'observed ' + utcStamp(m.observedAt) + ' \u00b7 received ' + utcStamp(m.receivedAt) +
+      ' \u00b7 epoch ' + shortHash(m.counterEpoch) + ' \u00b7 ' +
+      (module ? module.moduleType + ' v' + module.moduleVersion : 'no module');
+    text('telemFoot', foot);
+  }
+
+  function formatDistance(mm) {
+    var n = num(mm, 0);
+    if (Math.abs(n) < 1000) return n.toFixed(0) + ' mm';
+    if (Math.abs(n) < 1e6) return (n / 1000).toFixed(2) + ' m';
+    return (n / 1e6).toFixed(2) + ' km';
+  }
+
+  function renderEconomy(snapshot) {
+    var economy = (snapshot && snapshot.economy) || {};
+    var status = (snapshot && snapshot.status) || {};
+    var supply = economy.supply || {};
+    var schedule = economy.schedule || {};
+    var nft = economy.nft || {};
+    var staking = economy.staking || {};
+    var life = economy.lifecycle || {};
+    var chain = economy.chain || {};
+    var anchor = (status.builder && status.builder.anchor) || {};
+    var asset = economy.asset || {};
+    var identities = economy.identities || {};
+
+    var block = num(anchor.blockHeight, 0);
+    text('tBlock', group(block));
+    var progress = num(anchor.blockProgress, 0) / 1e9;
+    var blockPct = clamp(progress * 100, 0, 100);
+    var blockBar = $('tBlockBar');
+    if (blockBar) blockBar.style.width = blockPct.toFixed(2) + '%';
+    text('tBlockLeft', 'block in progress ' + (blockPct).toFixed(0) + '%');
+    text('tBlockRight', anchor.confirmedAt ? agoText(ageSeconds(anchor.confirmedAt)) : '--');
+
+    var settled = num(anchor.settledThroughRound, 0);
+    var current = num(life.currentRound, 0);
+    text('tRounds', group(settled));
+    var roundsUnit = $('tRounds');
+    if (roundsUnit && roundsUnit.parentElement) {
+      var unit = roundsUnit.parentElement.querySelector('.unit');
+      if (unit) unit.textContent = '/ ' + group(current);
+    }
+    var roundPct = percentOf(settled, current, 2);
+    var roundsBar = $('tRoundsBar');
+    if (roundsBar) roundsBar.style.width = clamp(roundPct, 0, 100).toFixed(2) + '%';
+    text('tRoundsLeft', roundPct.toFixed(1) + '% of round ' + group(current));
+    var queue = status.settlementQueue || {};
+    var buffered = queue.buffered || {};
+    text('tRoundsRight', (queue.state || 'n/a') + ' \u00b7 ' + (buffered.roundCount || '0') + ' queued');
+
+    var live = tokenInfo(supply.liveSupplyBaseUnits, asset.decimals);
+    var cap = tokenInfo(supply.capBaseUnits, asset.decimals);
+    text('tSupply', live ? live.compact : '--');
+    var supplyPct = live && cap && cap.wholeNum > 0 ? (live.wholeNum / cap.wholeNum) * 100 : 0;
+    var supplyBar = $('tSupplyBar');
+    if (supplyBar) supplyBar.style.width = clamp(supplyPct, 0.4, 100).toFixed(2) + '%';
+    text('tSupplyLeft', supplyPct.toFixed(3) + '% of cap');
+    text('tSupplyRight', (cap ? cap.compact : '--') + ' cap');
+
+    var nftIssued = num(nft.issued, 0);
+    var nftLive = num(nft.live, 0);
+    text('tNft', group(nftLive) + ' / ' + group(nftIssued));
+    var nftBar = $('tNftBar');
+    if (nftBar) nftBar.style.width = clamp(percentOf(nftLive, Math.max(nftIssued, 1), 1), 0, 100).toFixed(2) + '%';
+    text('tNftLeft', 'live ' + group(nftLive) + ' of ' + group(COLLECTION_SIZE));
+    text('tNftRight', 'max level ' + (nft.maximumLevel != null ? nft.maximumLevel : '--'));
+
+    var halvingAt = num(schedule.halvingBlocks, 0);
+    var closed = num(schedule.closedThroughBlock, 0);
+    var remaining = Math.max(0, halvingAt - closed);
+    var etaDate = new Date(Date.now() + remaining * BLOCK_TIME_S * 1000);
+    var etaDays = (remaining * BLOCK_TIME_S) / 86400;
+    text('tHalving', group(remaining));
+    var halvingBar = $('tHalvingBar');
+    if (halvingBar) halvingBar.style.width = clamp(percentOf(closed, Math.max(halvingAt, 1), 2), 0.5, 100).toFixed(2) + '%';
+    text('tHalvingLeft', '~' + dayStamp(etaDate) + ' (' + etaDays.toFixed(1) + ' d)');
+    text('tHalvingRight', 'at block ' + group(halvingAt));
+
+    var staked = tokenInfo(staking.totalStakedBaseUnits, asset.decimals);
+    text('tStaked', staked ? staked.compact : '--');
+    var stakedSub = $('tStakedSub');
+    if (stakedSub) {
+      stakedSub.textContent = 'sqk per power ' + tokenText(staking.sqkPerPower, asset.decimals) +
+        ' \u00b7 paused ' + String(staking.paused === true);
+    }
+    var stakedBar = $('tStakedBar');
+    if (stakedBar) stakedBar.style.width = staking.paused === true ? '0.4%' : '100%';
+    text('tStakedLeft', staking.paused === true ? 'paused' : 'open');
+    text('tStakedRight', (staking.launchReady === true ? 'launch ready' : 'launch pending'));
+
+    text('chipChainText', String(chain.target || 'chain') + ' ' + String(chain.chainId || ''));
+    setChip('chipChain', chain.chainId === '11155111' ? 'ok' : 'warn');
+    text('chipStageText', String(life.stage || 'stage') + (life.paused === true ? ' / paused' : ''));
+    setChip('chipStage', life.stage === 'active' && life.paused !== true ? 'ok' : 'warn');
+
+    var strip = [
+      'chain <b>' + esc(chain.target || '--') + '</b> ' + esc(String(chain.chainId || '')),
+      'indexed <b>' + esc(group(chain.indexedThroughBlock || '0')) + '</b>',
+      'safe <b>' + esc(group(chain.safeThroughBlock || '0')) + '</b>',
+      'token <b>' + esc(shortAddr(asset.address || identities.token)) + '</b>',
+      'first period rate <b>' + esc(tokenText(schedule.firstPeriodRateBaseUnits, asset.decimals)) + ' SQK</b>',
+      'launch bonus <b>' + esc(tokenText(schedule.launchBonusBaseUnits, asset.decimals)) + ' SQK</b>',
+      'core <b>' + esc(shortAddr(identities.core)) + '</b>'
+    ];
+    var stripEl = $('stackStrip');
+    if (stripEl) stripEl.innerHTML = strip.join('<span class="dim"> / </span>');
+  }
+
+  function renderAuditList(audit) {
+    var list = $('auditList');
+    if (!list) return;
+    var findings = (audit && Array.isArray(audit.findings)) ? audit.findings.slice() : [];
+    if (!findings.length) {
+      list.innerHTML = '<div class="empty">No findings were returned for this snapshot.</div>';
+      text('chipAuditScoreText', 'score --');
+      setChip('chipAuditScore', 'idle');
+      return;
+    }
+    var key = [(audit.generatedAt || ''), audit.verdict, findings.length].join('|');
+    var openIds = [];
+    if (state.openFindings) {
+      openIds = state.openFindings;
+    } else {
+      Array.prototype.forEach.call(list.querySelectorAll('details[open]'), function (node) {
+        if (node.dataset.fid) openIds.push(node.dataset.fid);
+      });
+    }
+
+    var order = { fail: 0, warn: 1, ok: 2 };
+    findings.sort(function (a, b) {
+      var d = (order[a.severity] == null ? 3 : order[a.severity]) - (order[b.severity] == null ? 3 : order[b.severity]);
+      return d || String(a.id || '').localeCompare(String(b.id || ''));
+    });
+    var html = findings.map(function (f) {
+      var sev = f.severity === 'warn' || f.severity === 'fail' ? f.severity : 'ok';
+      var open = (sev === 'fail' || openIds.indexOf(f.id) >= 0) ? ' open' : '';
+      var extra = '';
+      if (f.expected !== undefined && f.expected !== null && f.expected !== '') {
+        extra += '<div class="fkv"><span>expected</span><code>' + esc(String(f.expected)) + '</code></div>';
+      }
+      if (f.observed !== undefined && f.observed !== null && f.observed !== '') {
+        extra += '<div class="fkv"><span>observed</span><code>' + esc(String(f.observed)) + '</code></div>';
+      }
+      return '<details class="finding" data-sev="' + sev + '" data-fid="' + esc(f.id) + '"' + open + '>' +
+        '<summary><span class="dot ' + sev + '"></span>' +
+        '<span class="fmain"><code class="fid">' + esc(f.id) + '</code><span class="ftitle">' + esc(f.title) + '</span></span>' +
+        '<span class="fsev">' + sev + '</span></summary>' +
+        '<div class="fbody"><p>' + esc(f.detail || '') + '</p>' + extra +
+        '<span class="fsrc">source: ' + esc(f.source || 'api') + '</span></div></details>';
+    }).join('');
+    list.innerHTML = html;
+    state.auditKey = key;
+    state.openFindings = null;
+
+    text('chipAuditScoreText', 'score ' + num(audit.score, 0));
+    setChip('chipAuditScore', audit.verdict === 'VERIFIED' ? 'ok' : audit.verdict === 'DEGRADED' ? 'warn' : 'fail');
+    var foot = document.getElementById('auditFoot');
+    if (foot) {
+      var note = state.mode === 'local'
+        ? 'Client-side subset: ' + findings.length + ' invariants recomputed in the browser (API only).'
+        : 'Full audit: ' + findings.length + ' invariants recomputed from the public API' +
+          (audit.chain ? ' and ' + (audit.chain.probes ? audit.chain.probes.length : 0) + ' RPC probes' : '') + '.';
+      foot.textContent = note + ' Read-only, no wallet, no signature.';
+    }
+  }
+
+  /* ------------------------------------------------------------- sparklines */
+
+  function lineChart(canvas, values, options) {
+    if (!canvas) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var rect = canvas.getBoundingClientRect();
+    var width = Math.max(120, Math.round(rect.width));
+    var height = Math.max(40, Math.round(rect.height || options.height || 72));
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    var pad = { l: 34, r: 6, t: 7, b: 13 };
+    var plotW = Math.max(10, width - pad.l - pad.r);
+    var plotH = Math.max(10, height - pad.t - pad.b);
+    var top = options.top > 0 ? options.top : 1;
+
+    ctx.strokeStyle = 'rgba(51,51,61,0.85)';
+    ctx.lineWidth = 1;
+    ctx.font = '9px ' + 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.fillStyle = '#6C6C76';
+    for (var g = 0; g <= 2; g++) {
+      var y = pad.t + (plotH * g) / 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y + 0.5);
+      ctx.lineTo(width - pad.r, y + 0.5);
+      ctx.stroke();
+    }
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(compactNumber(top), pad.l - 4, pad.t + 1);
+    ctx.fillText('0', pad.l - 4, pad.t + plotH - 1);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(options.leftLabel || '', pad.l, height - 1);
+    ctx.textAlign = 'right';
+    ctx.fillText(options.rightLabel || '', width - pad.r, height - 1);
+
+    if (!values || values.length < 2) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#6C6C76';
+      ctx.font = '9.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+      ctx.fillText('collecting samples...', pad.l + plotW / 2, pad.t + plotH / 2);
+      return;
+    }
+
+    function xAt(i) { return pad.l + (plotW * i) / (values.length - 1); }
+    function yAt(v) { return pad.t + plotH - (clamp(v / top, 0, 1) * plotH); }
+
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yAt(values[0]));
+    for (var i = 1; i < values.length; i++) ctx.lineTo(xAt(i), yAt(values[i]));
+    ctx.lineTo(xAt(values.length - 1), pad.t + plotH);
+    ctx.lineTo(xAt(0), pad.t + plotH);
+    ctx.closePath();
+    var fill = ctx.createLinearGradient(0, pad.t, 0, pad.t + plotH);
+    fill.addColorStop(0, options.fill || 'rgba(255,122,26,0.22)');
+    fill.addColorStop(1, 'rgba(255,122,26,0)');
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yAt(values[0]));
+    for (var j = 1; j < values.length; j++) ctx.lineTo(xAt(j), yAt(values[j]));
+    ctx.strokeStyle = options.color || '#FF7A1A';
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    var lastX = xAt(values.length - 1);
+    var lastY = yAt(values[values.length - 1]);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 2.4, 0, Math.PI * 2);
+    ctx.fillStyle = options.color || '#FF7A1A';
+    ctx.fill();
+  }
+
+  function drawHistory() {
+    var workDeltas = [];
+    for (var i = 1; i < state.history.length; i++) {
+      workDeltas.push(Math.max(0, state.history[i].w - state.history[i - 1].w));
+    }
+    var rpms = state.history.map(function (p) { return p.r; });
+    var workTop = Math.max(1, Math.ceil(Math.max.apply(null, workDeltas.concat([0]))));
+    var rpmTop = Math.max(5, Math.ceil(Math.max.apply(null, rpms.concat([0])) * 1.15));
+
+    lineChart($('sparkWork'), workDeltas, {
+      top: workTop,
+      color: '#FF7A1A',
+      fill: 'rgba(255,122,26,0.22)',
+      leftLabel: '-5 min',
+      rightLabel: 'now'
+    });
+    lineChart($('sparkRpm'), rpms, {
+      top: rpmTop,
+      color: '#F2EAD3',
+      fill: 'rgba(242,234,211,0.14)',
+      leftLabel: '-5 min',
+      rightLabel: 'now'
+    });
+
+    var lastDelta = workDeltas.length ? workDeltas[workDeltas.length - 1] : 0;
+    var lastRpm = rpms.length ? rpms[rpms.length - 1] : 0;
+    text('sparkWorkVal', group(lastDelta));
+    text('sparkRpmVal', lastRpm.toFixed(1));
+    text('sparkWorkRange', 'peak ' + group(Math.max.apply(null, workDeltas.concat([0]))));
+    text('sparkRpmRange', 'peak ' + Math.max.apply(null, rpms.concat([0])).toFixed(1) + ' rpm');
+    text('chipSamplesText', state.history.length + ' / ' + MAX_SAMPLES + ' samples');
+  }
+
+  function pushSample(snapshot) {
+    var m = (snapshot && snapshot.status && snapshot.status.measurement) || {};
+    var workUnits = num(m.cumulativeWorkUnits, NaN);
+    var rpm = num(m.rpmMilli, 0) / 1000;
+    if (!Number.isFinite(workUnits)) return;
+    var now = Date.now();
+    var last = state.history[state.history.length - 1];
+    if (last && now - last.t < 4000) {
+      last.w = workUnits;
+      last.r = rpm;
+      last.t = now;
+    } else {
+      state.history.push({ t: now, w: workUnits, r: rpm });
+    }
+    while (state.history.length > MAX_SAMPLES) state.history.shift();
+    saveHistory();
+  }
+
+  function loadHistory() {
+    try {
+      var raw = JSON.parse(window.localStorage.getItem(HISTORY_KEY) || '[]');
+      if (!Array.isArray(raw)) return;
+      var now = Date.now();
+      var keep = raw.filter(function (p) {
+        return p && Number.isFinite(p.t) && Number.isFinite(p.w) &&
+          now - p.t >= 0 && now - p.t <= MAX_SAMPLES * SAMPLE_MS * 2;
+      }).slice(-MAX_SAMPLES);
+      state.history = keep.map(function (p) { return { t: p.t, w: p.w, r: num(p.r, 0) }; });
+    } catch (err) { /* localStorage can be unavailable */ }
+  }
+
+  function saveHistory() {
+    try {
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
+    } catch (err) { /* ignore quota / privacy mode */ }
+  }
+
+  function saveCache(snapshot, audit) {
+    try {
+      window.localStorage.setItem(CACHE_KEY, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        snapshot: snapshot,
+        audit: audit
+      }));
+    } catch (err) { /* payload may exceed the quota; nothing breaks */ }
+  }
+
+  function loadCache() {
+    try {
+      var raw = JSON.parse(window.localStorage.getItem(CACHE_KEY) || 'null');
+      if (raw && raw.snapshot && raw.audit) return raw;
+    } catch (err) { /* ignore */ }
+    return null;
+  }
+
+  /* ----------------------------------------------------------------- gauge */
+
+  function drawGauge(rpm, stale) {
+    var canvas = $('gauge');
+    if (!canvas) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var rect = canvas.getBoundingClientRect();
+    var width = Math.max(150, Math.round(rect.width));
+    var height = Math.max(80, Math.round(rect.height || 116));
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    var cx = width / 2;
+    var cy = height - 12;
+    var radius = Math.min(width * 0.44, height - 26);
+    var frac = clamp(rpm / GAUGE_MAX, 0, 1);
+    var accent = stale ? '#C7362B' : '#FF7A1A';
+
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, Math.PI, Math.PI * 2);
+    ctx.strokeStyle = '#2B2B34';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    if (frac > 0.001) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, Math.PI, Math.PI + frac * Math.PI);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 7;
+      ctx.stroke();
+    }
+
+    ctx.lineWidth = 1;
+    ctx.font = '8.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var ticks = 12;
+    for (var i = 0; i <= ticks; i++) {
+      var t = i / ticks;
+      var angle = Math.PI + t * Math.PI;
+      var major = i % 3 === 0;
+      var outer = radius - 12;
+      var inner = outer - (major ? 7 : 4);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.strokeStyle = major ? '#8A8A93' : '#4A4A55';
+      ctx.stroke();
+      if (major) {
+        var lx = cx + Math.cos(angle) * (radius - 25);
+        var ly = cy + Math.sin(angle) * (radius - 25);
+        ctx.fillStyle = '#8A8A93';
+        ctx.fillText(String(Math.round((i / ticks) * GAUGE_MAX)), lx, ly);
+      }
+    }
+
+    var needleAngle = Math.PI + frac * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(needleAngle) * (radius - 34), cy + Math.sin(needleAngle) * (radius - 34));
+    ctx.lineTo(cx + Math.cos(needleAngle) * (radius - 15), cy + Math.sin(needleAngle) * (radius - 15));
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3.4, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.strokeStyle = '#33333D';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  /* -------------------------------------------------------------- evidence */
+
+  function probeExpected(probe, economy) {
+    var supply = (economy && economy.supply) || {};
+    var asset = (economy && economy.asset) || {};
+    var call = probe && probe.call;
+    if (call === 'totalSupply') return { value: supply.liveSupplyBaseUnits, kind: 'bigint', label: 'live supply' };
+    if (call === 'decimals') return { value: asset.decimals, kind: 'number', label: 'asset decimals' };
+    if (call === 'symbol') return { value: asset.symbol, kind: 'text', label: 'asset symbol' };
+    if (call === 'name') return { value: asset.name || null, kind: 'text', label: 'asset name' };
+    if (call === 'balanceOf') return { value: null, kind: 'bigint', label: 'account balance' };
+    return { value: null, kind: 'text', label: 'no counterpart' };
+  }
+
+  function sameValue(a, b) {
+    if (a == null || b == null) return null;
+    var left = String(a).trim().toLowerCase();
+    var right = String(b).trim().toLowerCase();
+    if (left === right) return true;
+    var bigLeft = bigOf(left);
+    var bigRight = bigOf(right);
+    if (bigLeft !== null && bigRight !== null) return bigLeft === bigRight;
+    return false;
+  }
+
+  function probeDisplay(probe) {
+    if (!probe) return { text: '--', title: '' };
+    if (probe.error) return { text: probe.error, title: probe.error };
+    var decoded = probe.decoded;
+    if (decoded == null) return { text: '--', title: '' };
+    if (typeof decoded === 'string' && /^-?\d+$/.test(decoded) && decoded.length > 12) {
+      var info = tokenInfo(decoded, 18);
+      if (info) return { text: info.compact + ' SQK', title: decoded };
+    }
+    var raw = String(decoded);
+    return { text: raw.length > 22 ? raw.slice(0, 22) + '...' : raw, title: raw };
+  }
+
+  function renderEvidence(snapshot) {
+    var body = $('evBody');
+    var foot = $('evFoot');
+    if (!body) return;
+    var chain = snapshot && snapshot.chain ? snapshot.chain : null;
+    var economy = (snapshot && snapshot.economy) || {};
+    var probes = chain && Array.isArray(chain.probes) ? chain.probes : [];
+
+    if (!chain || !probes.length) {
+      body.innerHTML = '<div class="empty">No RPC probes in this snapshot. Open the local server (npm start) without ?chain=0 for read-only eth_call evidence.</div>';
+      text('chipRpcText', 'rpc off');
+      setChip('chipRpc', 'idle');
+      if (foot) foot.textContent = 'Chain evidence needs the local server; the client-only mode verifies API invariants instead.';
+      return;
+    }
+
+    text('chipRpcText', 'head ' + group(chain.headNumber == null ? '--' : chain.headNumber));
+    setChip('chipRpc', 'ok');
+
+    var head = document.getElementById('evHead');
+    if (head) {
+      head.innerHTML = '<span></span><span>contract</span><span>method</span><span>on-chain vs api</span><span>check</span>';
+    }
+
+    body.innerHTML = probes.map(function (probe) {
+      var expected = probeExpected(probe, economy);
+      var onchain = probe.decoded;
+      var match = probe.error ? false : (expected.value == null ? null : sameValue(onchain, expected.value));
+      var tone = probe.error ? 'fail' : match === true ? 'ok' : match === false ? 'fail' : 'idle';
+      var flag = probe.error ? 'error' : match === true ? 'match' : match === false ? 'mismatch' : 'n/a';
+      var chainText = probeDisplay(probe);
+      var apiText = expected.value == null ? 'no counterpart' : probeDisplay({ decoded: expected.value });
+      return '<div class="ev-row">' +
+        '<span class="dot ' + tone + '"></span>' +
+        '<code class="ev-addr" title="' + esc(probe.address || '') + '">' + esc(shortAddr(probe.address)) + '</code>' +
+        '<span class="ev-call" title="' + esc(probe.call || '') + '">' + esc(probe.call || '--') + '()</span>' +
+        '<span class="ev-vals"><span class="vl">chain</span> <span title="' + esc(chainText.title) + '">' + esc(chainText.text) + '</span>' +
+        '<span class="vs">vs</span><span class="vl">api</span> <span title="' + esc(String(expected.value == null ? '' : expected.value)) + '">' + esc(apiText.text) + '</span></span>' +
+        '<span class="ev-flag"><span class="chip' + (tone === 'ok' ? ' is-live' : tone === 'fail' ? ' is-fail' : '') + '">' + esc(flag) + '</span></span>' +
+        '</div>';
+    }).join('');
+
+    if (foot) {
+      var headText = chain.headNumber != null ? group(chain.headNumber) : 'n/a';
+      var gas = chain.gasPriceWei != null ? (num(chain.gasPriceWei, 0) / 1e9).toFixed(3) + ' gwei' : 'n/a';
+      foot.textContent = 'RPC ' + String(chain.rpcUrl || 'unknown').replace(/^https?:\/\//, '') +
+        ' \u00b7 head ' + headText + ' \u00b7 gas ' + gas + ' \u00b7 ' + probes.length + ' read-only probes.';
+    }
+  }
+
+  /* --------------------------------------------------------------- footer */
+
+  function renderFooter(snapshot) {
+    var repo = $('fRepo');
+    if (repo) {
+      if (state.repo) {
+        var label = String(state.repo).replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '');
+        repo.innerHTML = 'repo: <a href="' + esc(state.repo) + '" rel="noopener noreferrer">' + esc(label) + '</a>';
+      } else {
+        repo.innerHTML = 'repo: <span class="dim">local checkout</span>';
+      }
+    }
+    var commit = $('fCommit');
+    if (commit) {
+      commit.innerHTML = 'commit: <b>' + esc(state.commit ? String(state.commit).slice(0, 7) : (state.version ? 'v' + state.version : '--')) + '</b>';
+    }
+    var stamp = $('fStamp');
+    if (stamp) {
+      var fetchedAt = snapshot && snapshot.fetchedAt ? snapshot.fetchedAt : null;
+      var bits = [];
+      if (fetchedAt) bits.push('snapshot ' + utcStamp(fetchedAt));
+      if (state.mode === 'server') {
+        bits.push('<a href="/badge.svg" title="Status badge SVG">badge</a>');
+        bits.push('<a href="/badge/audit.svg" title="Audit badge SVG">audit badge</a>');
+      }
+      stamp.innerHTML = bits.length ? bits.join(' <span class="dim">/</span> ') : 'snapshot --';
+    }
+    text('clock', utcStamp(new Date()).slice(11));
+  }
+
+  function updateClock() {
+    text('clock', utcStamp(new Date()).slice(11));
+    if (!state.snapshot) return;
+    var m = (state.snapshot.status && state.snapshot.status.measurement) || {};
+    var age = ageSeconds(m.receivedAt || m.observedAt);
+    if (age == null) return;
+    var staleAfter = num(m.staleAfterSeconds, 120);
+    var stale = age > staleAfter || m.freshness === 'stale';
+    text('stFresh', Math.round(age) + ' s');
+    var freshEl = $('stFresh');
+    if (freshEl) freshEl.className = stale ? 'is-stale' : '';
+    if (state.staleFlag !== stale) {
+      state.staleFlag = stale;
+      var rpmEl = $('rpmValue');
+      if (rpmEl) rpmEl.className = stale ? 'is-stale' : '';
+      var rpm = num(m.rpmMilli, 0) / 1000;
+      drawGauge(rpm, stale);
+      var sub = $('stFreshSub');
+      if (sub) sub.className = 'stat-sub' + (stale ? ' is-stale' : '');
+    }
+  }
+
+  /* ---------------------------------------------------------------- loop */
+
+  function apply(loaded) {
+    state.snapshot = loaded.snap;
+    state.audit = loaded.audit;
+    renderVerdict(loaded.snap, loaded.audit);
+    renderTelemetry(loaded.snap);
+    renderEconomy(loaded.snap);
+    pushSample(loaded.snap);
+    drawHistory();
+    renderAuditList(loaded.audit);
+    renderEvidence(loaded.snap);
+    renderFooter(loaded.snap);
+    saveCache(loaded.snap, loaded.audit);
+  }
+
+  function renderCached(cache) {
+    state.mode = 'cached';
+    apply({ snap: cache.snapshot, audit: cache.audit });
+    showBanner('cached', 'Live sources are unreachable. Showing the last snapshot cached in this browser at ' +
+      utcStamp(cache.savedAt) + '.', 'fail');
+    text('hudModeText', 'cached');
+    setChip('hudMode', 'warn');
+  }
+
+  function renderFailure(error) {
+    state.mode = 'failed';
+    state.lastError = describeError(error);
+    var bar = $('verdict');
+    if (bar) bar.dataset.verdict = 'UNKNOWN';
+    text('vSymbol', '?');
+    text('vWord', 'offline');
+    var sub = $('vCount');
+    if (sub) sub.innerHTML = 'no snapshot available &middot; <b>' + esc(state.lastError) + '</b>';
+    text('vStamp', utcStamp(new Date()));
+    text('hudModeText', 'offline');
+    setChip('hudMode', 'fail');
+    text('hudSourceText', 'no data');
+    setChip('hudSource', 'idle');
+    document.title = 'OFFLINE - Squeekwatch';
+    var msg = IS_FILE
+      ? 'This page was opened from file:// and the browser blocks cross-origin API calls from local files. Run "npm start" inside the repository, then open http://127.0.0.1:8787/.'
+      : 'Public APIs are unreachable right now (' + state.lastError + '). The dashboard keeps retrying every 5 seconds.';
+    showBanner('offline', msg, 'fail');
+  }
+
+  function tick() {
+    if (state.busy) return;
+    state.busy = true;
+    var attempt;
+    if (state.mode === 'local') {
+      attempt = loadDirect().then(function (loaded) { return loaded; });
+    } else {
+      attempt = loadServer().catch(function (serverError) {
+        if (state.mode === 'server' || state.mode === 'cached') throw serverError;
+        return loadDirect();
+      });
+    }
+    return attempt.then(function (loaded) {
+      state.mode = loaded.audit && loaded.audit.mode === 'local' ? 'local' : 'server';
+      apply(loaded);
+      state.lastError = null;
+    }).catch(function (error) {
+      if (state.snapshot) {
+        state.lastError = describeError(error);
+        showBanner('degraded', 'Last refresh failed (' + state.lastError + '). The panels below still show the previous snapshot; retrying every 5 seconds.', 'fail');
+      } else {
+        var cache = loadCache();
+        if (cache) renderCached(cache);
+        else renderFailure(error);
+      }
+    }).then(function () {
+      state.busy = false;
+    });
+  }
+
+  function scheduleLoop() {
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(function () {
+      if (!state.paused) tick();
+    }, SAMPLE_MS);
+  }
+
+  function init() {
+    loadHistory();
+    drawHistory();
+    renderFooter(null);
+    loadRepoInfo();
+    tick().then(scheduleLoop);
+    setInterval(updateClock, 1000);
+
+    var refresh = $('btnRefresh');
+    if (refresh) {
+      refresh.addEventListener('click', function () {
+        refresh.disabled = true;
+        tick().then(function () { refresh.disabled = false; });
+      });
+    }
+    var pause = $('btnPause');
+    if (pause) {
+      pause.addEventListener('click', function () {
+        state.paused = !state.paused;
+        pause.setAttribute('aria-pressed', String(state.paused));
+        pause.textContent = state.paused ? 'resume' : 'pause';
+      });
+    }
+    var expand = $('btnExpand');
+    if (expand) {
+      expand.addEventListener('click', function () {
+        var open = expand.getAttribute('aria-expanded') !== 'true';
+        expand.setAttribute('aria-expanded', String(open));
+        expand.textContent = open ? 'collapse' : 'expand';
+        var nodes = document.querySelectorAll('#auditList details');
+        Array.prototype.forEach.call(nodes, function (node) { node.open = open; });
+        if (!open) state.openFindings = [];
+      });
+    }
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        var m = (state.snapshot && state.snapshot.status && state.snapshot.status.measurement) || {};
+        drawGauge(num(m.rpmMilli, 0) / 1000, state.staleFlag === true);
+        drawHistory();
+      }, 120);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

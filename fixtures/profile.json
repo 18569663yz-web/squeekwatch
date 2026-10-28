@@ -1,0 +1,51 @@
+{
+  "code": "8mae44td",
+  "valid": true,
+  "identity": {
+    "kind": "x",
+    "username": "Despite_zmw",
+    "name": "Dess",
+    "profileImageUrl": "https://pbs.twimg.com/profile_images/2052693106534035456/8h3N9r3O_400x400.jpg"
+  },
+  "standing": {
+    "rank": null,
+    "aura": 0,
+    "tier": null,
+    "next": null,
+    "movement": null
+  },
+  "completedReferrals": 1,
+  "inviteeColors": [
+    6
+  ],
+  "achievements": [
+    {
+      "id": "clout.signed_up",
+      "title": "Signed Up",
+      "rarity": {
+        "holders": 1159,
+        "heldByBps": 10000
+      }
+    },
+    {
+      "id": "clout.on_discord",
+      "title": "On Discord",
+      "rarity": {
+        "holders": 47,
+        "heldByBps": 406
+      }
+    },
+    {
+      "id": "clout.the_invitooor",
+      "title": "The Invitooor",
+      "rarity": {
+        "holders": 159,
+        "heldByBps": 1372
+      }
+    }
+  ],
+  "snapshot": {
+    "members": 1159,
+    "computedAt": "2026-10-28T17:42:17.322Z"
+  }
+}

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Squeekwatch testdrive - read-only checks and an optional zero-allowance reset against the Squeekchain SQK token on Sepolia.">
+<title>Testdrive - Squeekwatch</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231A1A20'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FF7A1A' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23F2EAD3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink: #1A1A20;
+    --panel: #22222A;
+    --panel-2: #262630;
+    --line: #33333D;
+    --line-soft: #2B2B34;
+    --cream: #F2EAD3;
+    --muted: #8A8A93;
+    --dim: #6C6C76;
+    --orange: #FF7A1A;
+    --red: #C7362B;
+    --green: #3FA46A;
+    --amber: #D9A521;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", Impact, system-ui, sans-serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(51, 51, 61, 0.26) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(51, 51, 61, 0.26) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(1000px 420px at 70% -10%, #000 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(1000px 420px at 70% -10%, #000 0%, transparent 72%);
+  }
+  .shell { position: relative; max-width: 900px; margin: 0 auto; padding: 16px 20px 40px; }
+  a { color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--line); }
+  a:hover { color: var(--orange); border-bottom-color: var(--orange); }
+  :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .dim { color: var(--dim); }
+  .muted { color: var(--muted); }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand svg { width: 24px; height: 24px; }
+  .brand .wordmark {
+    font-family: var(--display);
+    font-size: 19px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .brand .wordmark b { color: var(--orange); }
+  .brand .sub { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .topbar .right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 3px 7px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--panel);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--cream); font-weight: 600; }
+  .chip.is-live { border-color: rgba(63, 164, 106, 0.5); color: #9FD3B5; }
+  .chip.is-warn { border-color: rgba(217, 165, 33, 0.5); color: #E7C878; }
+  .chip.is-fail { border-color: rgba(199, 54, 43, 0.55); color: #E39A93; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; flex: none; }
+  .dot.ok { background: var(--green); }
+  .dot.warn { background: var(--amber); }
+  .dot.fail { background: var(--red); }
+  .dot.idle { background: var(--dim); }
+
+  h1 { font-family: var(--display); font-size: 34px; letter-spacing: 0.04em; line-height: 1.02; margin: 0 0 4px; text-transform: uppercase; }
+  .lede { color: var(--muted); max-width: 70ch; margin: 0 0 16px; font-size: 13px; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; margin-bottom: 12px; overflow: hidden; }
+  .panel-head { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-bottom: 1px solid var(--line-soft); }
+  .panel-head h2 { margin: 0; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; }
+  .panel-head .step {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--ink);
+    background: var(--orange);
+    border-radius: 2px;
+    padding: 1px 5px;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+  .panel-head .head-right { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .panel-body { padding: 13px; }
+  .panel-foot { padding: 8px 13px; border-top: 1px solid var(--line-soft); font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+
+  .checks { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line-soft); border-top: 1px solid var(--line-soft); }
+  .check {
+    display: grid;
+    grid-template-columns: 12px 116px minmax(0, 1fr) minmax(0, 1fr) 62px;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 13px;
+    background: var(--panel);
+    font-family: var(--mono);
+    font-size: 10.5px;
+  }
+  .check .name { color: var(--muted); }
+  .check .vals { color: var(--cream); overflow-wrap: anywhere; }
+  .check .vals i { color: var(--dim); font-style: normal; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .check .flag { text-align: right; }
+  .check .flag .chip { padding: 2px 5px; font-size: 8.5px; }
+
+  .kv { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 12px; font-family: var(--mono); font-size: 11px; }
+  .kv dt { color: var(--muted); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 2px; }
+  .kv dd { margin: 0; color: var(--cream); overflow-wrap: anywhere; }
+  .kv dd.big { font-family: var(--display); font-size: 21px; line-height: 1.15; }
+
+  .notice {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    background: var(--panel-2);
+    padding: 11px 13px;
+    border-radius: 3px;
+    margin-bottom: 12px;
+  }
+  .notice h3 { margin: 0 0 6px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--amber); }
+  .notice ul { margin: 0; padding-left: 18px; }
+  .notice li { margin: 0 0 5px; font-size: 12.5px; color: #DED6C2; }
+  .notice li:last-child { margin-bottom: 0; }
+  .notice code { font-family: var(--mono); font-size: 11.5px; color: var(--cream); background: var(--ink); padding: 1px 4px; border-radius: 2px; }
+  .notice.is-danger { border-left-color: var(--red); }
+  .notice.is-danger h3 { color: #E39A93; }
+
+  .btn {
+    appearance: none;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 13px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+  .btn.primary { background: var(--orange); border-color: var(--orange); color: var(--ink); }
+  .btn.primary:hover:not(:disabled) { background: #ff8c3a; color: var(--ink); }
+  .btn:disabled { opacity: 0.42; cursor: not-allowed; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .toggle { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; color: #DED6C2; margin: 12px 0; max-width: 78ch; }
+  .toggle input { margin: 3px 0 0; accent-color: var(--orange); width: 15px; height: 15px; flex: none; }
+  .hint { font-size: 11.5px; color: var(--muted); margin-top: 8px; max-width: 80ch; }
+  .hint.is-warn { color: #E7C878; }
+  .hint.is-fail { color: #E39A93; }
+
+  .log {
+    background: var(--ink);
+    border: 1px solid var(--line-soft);
+    border-radius: 3px;
+    padding: 9px 11px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: #CFC7B4;
+    min-height: 76px;
+    max-height: 220px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .log .t { color: var(--dim); }
+  .log .ok { color: #9FD3B5; }
+  .log .warn { color: #E7C878; }
+  .log .fail { color: #E39A93; }
+  footer { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  footer .sep { color: var(--dim); }
+
+  @media (max-width: 720px) {
+    .shell { padding: 12px; }
+    .check { grid-template-columns: 12px 1fr 62px; row-gap: 3px; }
+    .check .name { grid-column: 2; }
+    .check .vals { grid-column: 2; }
+    .check .flag { grid-column: 3; grid-row: 1; }
+    .kv { grid-template-columns: 1fr; }
+    h1 { font-size: 27px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <circle cx="16" cy="16" r="12.5" fill="none" stroke="#FF7A1A" stroke-width="2.4"></circle>
+        <g stroke="#FF7A1A" stroke-width="1.5" opacity="0.8">
+          <path d="M16 4.2v7.6M16 20.2v7.6M4.2 16h7.6M20.2 16h7.6"></path>
+        </g>
+        <circle cx="16" cy="16" r="2.8" fill="#F2EAD3"></circle>
+      </svg>
+      <div>
+        <div class="wordmark">Squeek<b>watch</b></div>
+        <div class="sub">wallet testdrive / sepolia</div>
+      </div>
+    </div>
+    <div class="right">
+      <a href="index.html" class="chip">back to dashboard</a>
+      <span class="chip" id="chipNetwork"><span class="dot idle"></span><span id="chipNetworkText">network</span></span>
+      <span class="chip" id="chipWallet"><span class="dot idle"></span><span id="chipWalletText">wallet</span></span>
+    </div>
+  </header>
+
+  <h1>Squeekchain testdrive</h1>
+  <p class="lede">
+    Three read-only checks against Sepolia, then one optional write action: resetting the staking contract's
+    spending allowance on your own SQK balance to zero. Nothing here is automatic, nothing here can move your tokens.
+  </p>
+
+  <section class="panel" aria-labelledby="reads-title">
+    <div class="panel-head">
+      <h2 id="reads-title">Read-only chain checks</h2>
+      <span class="step">01</span>
+      <div class="head-right">
+        <span class="chip" id="chipRpc"><span class="dot idle"></span><span id="chipRpcText">rpc</span></span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <dl class="kv" style="margin-bottom:12px">
+        <dt>SQK total supply</dt>
+        <dd class="big" id="readSupply">--</dd>
+        <dt>SQK symbol / decimals</dt>
+        <dd id="readSymbol">--</dd>
+        <dt>Token contract</dt>
+        <dd id="readToken">--</dd>
+        <dt>Sepolia chainId</dt>
+        <dd id="readChain">--</dd>
+      </dl>
+      <div class="controls">
+        <button class="btn" id="btnRead" type="button">run read-only checks</button>
+        <span class="hint" id="readHint">Calls eth_call and eth_chainId on public Sepolia RPC endpoints. No wallet required.</span>
+      </div>
+    </div>
+    <div class="checks" id="checkRows" aria-live="polite">
+      <div class="check"><span class="dot idle"></span><span class="name">waiting</span><span class="vals">Run the read-only checks to compare the chain with the public economy API.</span><span class="vals"></span><span class="flag"></span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="wallet-title">
+    <div class="panel-head">
+      <h2 id="wallet-title">Browser wallet</h2>
+      <span class="step">02</span>
+      <div class="head-right">
+        <span class="chip" id="chipAccount"><span class="dot idle"></span><span id="chipAccountText">not connected</span></span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <p class="hint" id="walletHint">
+        A wallet is optional. Connecting only reveals your public address so it can be typed into a transaction you
+        review in your own wallet. This page never asks for a seed phrase, private key or recovery code.
+      </p>
+      <div class="controls">
+        <button class="btn" id="btnConnect" type="button">connect wallet</button>
+        <button class="btn" id="btnSwitch" type="button" style="display:none">switch to sepolia</button>
+        <span class="mono dim" id="walletNote" style="font-size:10.5px"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="write-title">
+    <div class="panel-head">
+      <h2 id="write-title">The only write action</h2>
+      <span class="step">03</span>
+      <div class="head-right">
+        <span class="chip" id="chipAction"><span class="dot idle"></span><span id="chipActionText">idle</span></span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="notice">
+        <h3>Read this before you click</h3>
+        <ul>
+          <li><b>Sepolia testnet only.</b> Squeekchain's SQK token here has no mainnet value. The exact call is <code>approve(stakingProxy, 0)</code> on the SQK token contract.</li>
+          <li>It sets the staking contract's existing allowance for your account to <b>zero</b>. It cannot transfer tokens, cannot grant an allowance, and does not touch any other contract.</li>
+          <li>Your wallet builds and shows the transaction for review first. You can reject it. Nothing is signed or sent without your confirmation.</li>
+          <li>Squeekwatch does not ask for and cannot read your private key, seed phrase, recovery code or password. There is no backend: the page is static files plus your own wallet.</li>
+          <li>This button stays disabled until your wallet is connected, on chainId 11155111, and you tick the box below.</li>
+        </ul>
+      </div>
+
+      <label class="toggle" for="ack">
+        <input type="checkbox" id="ack" disabled>
+        <span>I understand this sends a real testnet transaction from my own account to set the staking allowance to zero, and that I pay the Sepolia gas.</span>
+      </label>
+
+      <div class="controls">
+        <button class="btn primary" id="btnApprove" type="button" disabled>send approve(stakingProxy, 0)</button>
+        <span class="hint" id="writeHint">Waiting for a wallet.</span>
+      </div>
+
+      <dl class="kv" style="margin-top:14px">
+        <dt>Token / spender</dt>
+        <dd class="mono" id="writeTargets">--</dd>
+        <dt>Calldata</dt>
+        <dd class="mono" id="writeCalldata">--</dd>
+        <dt>Transaction</dt>
+        <dd class="mono" id="writeTx">not sent</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="log-title">
+    <div class="panel-head">
+      <h2 id="log-title">Activity log</h2>
+      <div class="head-right"><button class="btn" id="btnClear" type="button" style="padding:4px 8px">clear</button></div>
+    </div>
+    <div class="panel-body" style="padding-top:10px">
+      <div class="log" id="log" aria-live="polite"></div>
+    </div>
+    <div class="panel-foot">Everything happens in this tab. No cookies, no analytics, no server-side storage.</div>
+  </section>
+
+  <footer>
+    <span>SQUEEKWATCH TESTDRIVE</span>
+    <span class="sep">/</span>
+    <span>data: public Sepolia RPC and Squeekchain API</span>
+    <span class="sep">/</span>
+    <span>wallet: your browser, your keys</span>
+    <span class="sep">/</span>
+    <span><a href="index.html">dashboard</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var RPCS = [
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://1rpc.io/sepolia'
+  ];
+  var API = 'https://api.squeekchain.com';
+  var SEPOLIA_CHAIN_ID = 11155111;
+  var SEPOLIA_HEX = '0xaa36a7';
+  var TOKEN = '0x5501e1fa81be1c3f49225fa7668da0245d07db60';
+  var STAKING = '0x4b67b739dfd832f4eac67a7aa3bc244fb74cea4f';
+  var SPENDER_LABEL = 'Squeekchain staking proxy';
+
+  var APPROVE_SELECTOR = '0x095ea7b3';
+
+  var state = {
+    accounts: [],
+    chainId: null,
+    provider: null,
+    busy: false,
+    apiEconomy: null,
+    rpcUrl: null
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function text(id, value) { var el = $(id); if (el) el.textContent = value; }
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function pad32(hexNo0x) { return '0'.repeat(64 - hexNo0x.length) + hexNo0x; }
+
+  function buildApproveCalldata(spender, amount) {
+    return APPROVE_SELECTOR + pad32(spender.replace(/^0x/i, '').toLowerCase()) + pad32(amount.toString(16));
+  }
+
+  function group(value) {
+    var raw = String(value == null ? '' : value).trim();
+    var neg = raw.charAt(0) === '-';
+    if (neg) raw = raw.slice(1);
+    var out = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return neg ? '-' + out : out;
+  }
+
+  function compact(n) {
+    if (!Number.isFinite(n)) return '--';
+    var abs = Math.abs(n);
+    var trimmed = function (s) { return s.indexOf('.') >= 0 ? s.replace(/0+$/, '').replace(/\.$/, '') : s; };
+    if (abs >= 1e12) return trimmed((n / 1e12).toFixed(2)) + 'T';
+    if (abs >= 1e9) return trimmed((n / 1e9).toFixed(2)) + 'B';
+    if (abs >= 1e6) return trimmed((n / 1e6).toFixed(2)) + 'M';
+    if (abs >= 1e3) return trimmed((n / 1e3).toFixed(1)) + 'K';
+    return trimmed(n.toFixed(2));
+  }
+
+  function shortAddr(addr) {
+    var raw = String(addr || '');
+    return raw.length > 12 ? raw.slice(0, 6) + '...' + raw.slice(-4) : raw || '--';
+  }
+
+  function baseUnitsToSqk(hexOrDec, decimals) {
+    var raw = String(hexOrDec || '0');
+    var value;
+    try {
+      value = raw.indexOf('0x') === 0 ? BigInt(raw) : BigInt(raw);
+    } catch (err) { return null; }
+    var base = 10n ** BigInt(decimals == null ? 18 : decimals);
+    var whole = value / base;
+    var frac = (value % base).toString().padStart(decimals == null ? 18 : decimals, '0').replace(/0+$/, '');
+    return {
+      compact: compact(Number(whole)),
+      exact: group(whole.toString()) + (frac ? '.' + frac.slice(0, 6) : ''),
+      whole: whole.toString()
+    };
+  }
+
+  function decodeAbiString(hex) {
+    if (!hex || hex === '0x') return null;
+    var raw = String(hex).replace(/^0x/i, '');
+    try {
+      if (raw.length >= 128) {
+        var offset = parseInt(raw.slice(0, 64), 16) * 2;
+        var length = parseInt(raw.slice(offset, offset + 64), 16);
+        var data = raw.slice(offset + 64, offset + 64 + length * 2);
+        return hexToUtf8(data);
+      }
+      return hexToUtf8(raw.replace(/0+$/, ''));
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function hexToUtf8(hex) {
+    var bytes = new Uint8Array(hex.length / 2);
+    for (var i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+    if (typeof TextDecoder === 'function') return new TextDecoder('utf-8').decode(bytes);
+    var out = '';
+    for (var j = 0; j < bytes.length; j++) out += String.fromCharCode(bytes[j]);
+    return out;
+  }
+
+  function log(message, tone) {
+    var box = $('log');
+    if (!box) return;
+    var stamp = new Date().toISOString().slice(11, 19);
+    var cls = tone ? ' ' + tone : '';
+    box.innerHTML += '<div><span class="t">' + stamp + 'Z</span><span class="' + cls + '"> ' + esc(message) + '</span></div>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function rpcCall(method, params) {
+    var payload = { jsonrpc: '2.0', id: Date.now(), method: method, params: params || [] };
+    var attempt = function (index) {
+      if (index >= RPCS.length) return Promise.reject(new Error('all RPC endpoints failed'));
+      var url = RPCS[index];
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function (json) {
+        if (json.error) throw new Error(json.error.message || 'rpc error');
+        state.rpcUrl = url;
+        return json.result;
+      }).catch(function (err) {
+        if (index === 0) log('RPC ' + url.replace(/^https?:\/\//, '') + ' failed: ' + err.message + ' - trying fallback', 'warn');
+        return attempt(index + 1);
+      });
+    };
+    return attempt(0);
+  }
+
+  function ethCall(to, data) {
+    return rpcCall('eth_call', [{ to: to, data: data }, 'latest']);
+  }
+
+  /* ------------------------------------------------------------ read-only */
+
+  function setCheckRows(rows) {
+    var body = $('checkRows');
+    if (!body) return;
+    body.innerHTML = rows.map(function (row) {
+      var tone = row.tone || 'idle';
+      return '<div class="check">' +
+        '<span class="dot ' + tone + '"></span>' +
+        '<span class="name">' + esc(row.name) + '</span>' +
+        '<span class="vals"><i>chain</i> ' + esc(row.onchain) + '</span>' +
+        '<span class="vals"><i>api</i> ' + esc(row.api) + '</span>' +
+        '<span class="flag"><span class="chip ' + (tone === 'ok' ? 'is-live' : tone === 'fail' ? 'is-fail' : tone === 'warn' ? 'is-warn' : '') + '">' + esc(row.flag) + '</span></span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function runReads() {
+    var button = $('btnRead');
+    if (button) button.disabled = true;
+    text('readHint', 'Reading Sepolia...');
+    var chainIdHex = null;
+    var totalSupplyHex = null;
+    var symbolHex = null;
+    var decimalsHex = null;
+
+    rpcCall('eth_chainId').then(function (hex) {
+      chainIdHex = hex;
+      return ethCall(TOKEN, '0x18160ddd');
+    }).then(function (hex) {
+      totalSupplyHex = hex;
+      return ethCall(TOKEN, '0x95d89b41');
+    }).then(function (hex) {
+      symbolHex = hex;
+      return ethCall(TOKEN, '0x313ce567');
+    }).then(function (hex) {
+      decimalsHex = hex;
+      return fetch(API + '/v1/economy/state', { cache: 'no-store' }).then(function (res) {
+        return res.ok ? res.json() : null;
+      }).catch(function () { return null; });
+    }).then(function (economy) {
+      state.apiEconomy = economy;
+      var chainId = parseInt(chainIdHex, 16);
+      var decimals = decimalsHex ? parseInt(decimalsHex, 16) : 18;
+      var supply = baseUnitsToSqk(totalSupplyHex, decimals);
+      var symbol = decodeAbiString(symbolHex) || '--';
+      var asset = (economy && economy.asset) || {};
+      var apiSupply = asset.decimals != null ? baseUnitsToSqk((economy.supply || {}).liveSupplyBaseUnits, Number(asset.decimals)) : null;
+
+      text('readSupply', supply ? supply.compact + ' SQK' : '--');
+      text('readSymbol', symbol + ' / ' + decimals + ' decimals');
+      text('readToken', TOKEN);
+      text('readChain', String(chainId) + (chainId === SEPOLIA_CHAIN_ID ? ' (Sepolia, expected)' : ' (unexpected chain)'));
+      var chipText = $('chipRpcText');
+      if (chipText) chipText.textContent = state.rpcUrl ? state.rpcUrl.replace(/^https?:\/\//, '') : 'rpc';
+      var chip = $('chipRpc');
+      if (chip) chip.className = 'chip' + (chainId === SEPOLIA_CHAIN_ID ? ' is-live' : ' is-fail');
+
+      var symbolTone = !asset.symbol ? 'idle' : (String(asset.symbol).toLowerCase() === symbol.toLowerCase() ? 'ok' : 'fail');
+      var decimalsTone = asset.decimals == null ? 'idle' : (Number(asset.decimals) === decimals ? 'ok' : 'fail');
+      var supplyTone = !apiSupply || !supply ? 'idle' : (supply.whole === apiSupply.whole ? 'ok' : 'fail');
+      var chainTone = !economy || !economy.chain ? 'idle' : (String(economy.chain.chainId) === String(chainId) ? 'ok' : 'fail');
+      var flagFor = function (tone) { return tone === 'ok' ? 'match' : tone === 'fail' ? 'mismatch' : 'no api'; };
+
+      setCheckRows([
+        { name: 'chain id', onchain: String(chainId), api: economy && economy.chain ? String(economy.chain.chainId) : 'n/a', tone: chainTone, flag: flagFor(chainTone) },
+        { name: 'token symbol', onchain: symbol, api: asset.symbol || 'n/a', tone: symbolTone, flag: flagFor(symbolTone) },
+        { name: 'token decimals', onchain: String(decimals), api: asset.decimals != null ? String(asset.decimals) : 'n/a', tone: decimalsTone, flag: flagFor(decimalsTone) },
+        { name: 'total supply', onchain: supply ? supply.compact + ' SQK' : '--', api: apiSupply ? apiSupply.compact + ' SQK' : 'n/a', tone: supplyTone, flag: flagFor(supplyTone) }
+      ]);
+
+      text('readHint', 'On-chain reads finished. The token contract answered with live Sepolia state.');
+      log('read totalSupply=' + (supply ? supply.exact + ' SQK' : '--') + ', symbol=' + symbol + ', decimals=' + decimals, 'ok');
+      if (symbolTone === 'fail' || decimalsTone === 'fail' || supplyTone === 'fail') {
+        log('one or more values disagree with the public economy API - investigate before relying on this deployment', 'fail');
+      }
+      if (button) button.disabled = false;
+      refreshControls();
+    }).catch(function (err) {
+      text('readHint', 'Read-only checks failed: ' + err.message);
+      var chip = $('chipRpc');
+      if (chip) chip.className = 'chip is-fail';
+      setCheckRows([{ name: 'rpc', onchain: 'unreachable', api: 'n/a', tone: 'fail', flag: 'error' }]);
+      log('read-only checks failed: ' + err.message, 'fail');
+      if (button) button.disabled = false;
+    });
+  }
+
+  /* ---------------------------------------------------------------- wallet */
+
+  function detectProvider() {
+    var provider = window.ethereum || (window.web3 && window.web3.currentProvider) || null;
+    state.provider = provider && typeof provider.request === 'function' ? provider : null;
+    if (!state.provider) {
+      text('chipWalletText', 'no wallet');
+      var chip = $('chipWallet');
+      if (chip) chip.className = 'chip is-warn';
+      text('walletHint', 'No injected wallet found. Install a browser wallet such as MetaMask (it exposes window.ethereum), then reload this page. The read-only checks above work without one.');
+      var connect = $('btnConnect');
+      if (connect) connect.disabled = true;
+      refreshControls();
+      return false;
+    }
+    var walletChip = $('chipWallet');
+    if (walletChip) walletChip.className = 'chip is-live';
+    text('chipWalletText', 'wallet detected');
+    return true;
+  }
+
+  function refreshControls() {
+    var connected = state.accounts.length > 0;
+    var onSepolia = state.chainId === SEPOLIA_CHAIN_ID;
+    var ack = $('ack');
+    if (ack) ack.disabled = !connected;
+    var approve = $('btnApprove');
+    var writeHint = $('writeHint');
+
+    if (!state.provider) {
+      if (approve) approve.disabled = true;
+      if (writeHint) { writeHint.textContent = 'Disabled: no injected wallet on this page.'; writeHint.className = 'hint is-warn'; }
+      return;
+    }
+    if (!connected) {
+      if (approve) approve.disabled = true;
+      if (writeHint) { writeHint.textContent = 'Disabled: connect a wallet and switch it to Sepolia first.'; writeHint.className = 'hint'; }
+      return;
+    }
+    if (!onSepolia) {
+      if (approve) approve.disabled = true;
+      if (writeHint) { writeHint.textContent = 'Disabled: wallet is on chainId ' + state.chainId + ', this action needs Sepolia (' + SEPOLIA_CHAIN_ID + ').'; writeHint.className = 'hint is-warn'; }
+      return;
+    }
+    var checked = ack && ack.checked;
+    if (approve) approve.disabled = !checked;
+    if (writeHint) {
+      writeHint.textContent = checked
+        ? 'Ready. Your wallet will open with a transaction you can still reject.'
+        : 'Tick the confirmation box above to enable the button.';
+      writeHint.className = 'hint' + (checked ? '' : ' is-warn');
+    }
+  }
+
+  function connect() {
+    if (!state.provider) return;
+    var button = $('btnConnect');
+    if (button) button.disabled = true;
+    state.provider.request({ method: 'eth_requestAccounts' })
+      .then(function (accounts) {
+        state.accounts = Array.isArray(accounts) ? accounts : [];
+        return state.provider.request({ method: 'eth_chainId' });
+      })
+      .then(function (chainHex) {
+        state.chainId = parseInt(chainHex, 16);
+        renderAccount();
+        log('wallet connected: ' + shortAddr(state.accounts[0]) + ' on chainId ' + state.chainId, 'ok');
+      })
+      .catch(function (err) {
+        log('wallet connection rejected or failed: ' + (err && err.message ? err.message : err), 'warn');
+        text('walletHint', 'The wallet did not connect: ' + (err && err.message ? err.message : 'unknown error') + '. You can still run the read-only checks.');
+      })
+      .then(function () {
+        if (button) button.disabled = false;
+        refreshControls();
+      });
+  }
+
+  function renderAccount() {
+    var connected = state.accounts.length > 0;
+    text('chipAccountText', connected ? shortAddr(state.accounts[0]) : 'not connected');
+    var chip = $('chipAccount');
+    if (chip) chip.className = 'chip' + (connected ? ' is-live' : '');
+    var switchBtn = $('btnSwitch');
+    if (switchBtn) switchBtn.style.display = connected && state.chainId !== SEPOLIA_CHAIN_ID ? '' : 'none';
+    var networkChip = $('chipNetworkText');
+    if (networkChip) networkChip.textContent = state.chainId == null ? 'network' : 'chainId ' + state.chainId;
+    var network = $('chipNetwork');
+    if (network) network.className = 'chip' + (state.chainId === SEPOLIA_CHAIN_ID ? ' is-live' : state.chainId == null ? '' : ' is-fail');
+    text('walletNote', connected ? 'address ' + state.accounts[0] : '');
+    refreshControls();
+  }
+
+  function switchNetwork() {
+    if (!state.provider) return;
+    state.provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: SEPOLIA_HEX }]
+    }).then(function () {
+      return state.provider.request({ method: 'eth_chainId' });
+    }).then(function (hex) {
+      state.chainId = parseInt(hex, 16);
+      renderAccount();
+      log('switched wallet to chainId ' + state.chainId, 'ok');
+    }).catch(function (err) {
+      log('network switch failed: ' + (err && err.message ? err.message : err) + ' - add Sepolia in your wallet manually', 'warn');
+    });
+  }
+
+  function sendApprove() {
+    if (!state.provider || !state.accounts.length || state.chainId !== SEPOLIA_CHAIN_ID) {
+      refreshControls();
+      return;
+    }
+    var ack = $('ack');
+    if (!ack || !ack.checked) return;
+
+    var data = buildApproveCalldata(STAKING, 0);
+    var button = $('btnApprove');
+    if (button) button.disabled = true;
+    var actionChip = $('chipAction');
+    if (actionChip) actionChip.className = 'chip is-warn';
+    text('chipActionText', 'waiting for wallet');
+    text('writeTx', 'waiting for your wallet to confirm...');
+    log('requesting approve(' + shortAddr(STAKING) + ', 0) from ' + shortAddr(state.accounts[0]), 'warn');
+
+    state.provider.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: state.accounts[0],
+        to: TOKEN,
+        data: data,
+        value: '0x0'
+      }]
+    }).then(function (txHash) {
+      text('writeTx', txHash);
+      var link = 'https://sepolia.etherscan.io/tx/' + txHash;
+      var el = $('writeTx');
+      if (el) el.innerHTML = '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="mono">' + esc(txHash) + '</a>';
+      if (actionChip) actionChip.className = 'chip is-live';
+      text('chipActionText', 'submitted');
+      log('transaction submitted: ' + txHash, 'ok');
+      log('wait for the receipt in your wallet; nothing else is sent from this page', 'ok');
+    }).catch(function (err) {
+      var message = err && err.message ? err.message : String(err);
+      if (actionChip) actionChip.className = 'chip is-fail';
+      text('chipActionText', 'rejected');
+      text('writeTx', 'not sent: ' + message);
+      log('transaction not sent: ' + message, 'fail');
+    }).then(function () {
+      if (button) button.disabled = false;
+      refreshControls();
+    });
+  }
+
+  /* ------------------------------------------------------------------ init */
+
+  function init() {
+    var calldata = buildApproveCalldata(STAKING, 0);
+    text('writeTargets', shortAddr(TOKEN) + ' -> ' + shortAddr(STAKING) + ' (' + SPENDER_LABEL + ')');
+    text('writeCalldata', calldata);
+    var calldataEl = $('writeCalldata');
+    if (calldataEl) calldataEl.title = 'selector ' + APPROVE_SELECTOR + ' + 32 byte spender + 32 byte zero amount = ' + calldata.length + ' hex chars';
+
+    var hasWallet = detectProvider();
+    if (hasWallet) {
+      state.provider.request({ method: 'eth_accounts' }).then(function (accounts) {
+        state.accounts = Array.isArray(accounts) ? accounts : [];
+        return state.provider.request({ method: 'eth_chainId' }).catch(function () { return null; });
+      }).then(function (chainHex) {
+        if (chainHex) state.chainId = parseInt(chainHex, 16);
+        renderAccount();
+      }).catch(function () { renderAccount(); });
+
+      if (state.provider.on) {
+        state.provider.on('accountsChanged', function (accounts) {
+          state.accounts = Array.isArray(accounts) ? accounts : [];
+          renderAccount();
+          log('wallet accounts changed', 'warn');
+        });
+        state.provider.on('chainChanged', function (chainHex) {
+          state.chainId = parseInt(chainHex, 16);
+          renderAccount();
+          log('wallet network changed to chainId ' + state.chainId, 'warn');
+        });
+      }
+    } else {
+      renderAccount();
+    }
+
+    var readButton = $('btnRead');
+    if (readButton) readButton.addEventListener('click', runReads);
+    var connectButton = $('btnConnect');
+    if (connectButton) connectButton.addEventListener('click', connect);
+    var switchButton = $('btnSwitch');
+    if (switchButton) switchButton.addEventListener('click', switchNetwork);
+    var approveButton = $('btnApprove');
+    if (approveButton) approveButton.addEventListener('click', sendApprove);
+    var ack = $('ack');
+    if (ack) ack.addEventListener('change', refreshControls);
+    var clear = $('btnClear');
+    if (clear) clear.addEventListener('click', function () { var box = $('log'); if (box) box.innerHTML = ''; });
+
+    log('page ready. wallet ' + (hasWallet ? 'detected' : 'not detected') + ', chainId ' + (state.chainId == null ? 'unknown' : state.chainId), 'ok');
+    log('read-only checks do not touch your wallet; the approve step is disabled until you unlock it', 'ok');
+    refreshControls();
+    runReads();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
