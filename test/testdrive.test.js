@@ -31,10 +31,11 @@ test('testdrive inline script parses and still builds the zero-allowance approve
   assert.ok(html.includes('0x095ea7b3'), 'approve selector must stay visible');
 });
 
-test('testdrive offers a direct read-only call to the staking proxy', () => {
-  for (const needle of ['0x5c975abb', 'id="ackPing"', 'id="btnPing"', 'function sendPing', 'id="pingTarget"', 'id="pingTx"']) {
+test('testdrive offers direct read-only calls to the staking and core proxies', () => {
+  for (const needle of ['0x5c975abb', 'id="ackPing"', 'id="btnPingStaking"', 'id="btnPingCore"', 'function sendPing', 'function sendPingCore', 'id="pingTarget"', 'id="pingTx"', 'id="pingTxCore"']) {
     assert.ok(html.includes(needle), 'missing ' + needle);
   }
-  assert.ok(html.includes('to: STAKING'), 'ping must target the staking proxy');
-  assert.ok(html.includes('data: PAUSED_SELECTOR'), 'ping must send the paused() selector');
+  assert.ok(html.includes('to: STAKING'), 'staking ping must target the staking proxy');
+  assert.ok(html.includes('to: CORE'), 'core ping must target the core proxy');
+  assert.ok(html.includes('data: PAUSED_SELECTOR'), 'pings must send the paused() selector');
 });
