@@ -30,3 +30,11 @@ test('testdrive inline script parses and still builds the zero-allowance approve
   execFileSync(process.execPath, ['--check', file]);
   assert.ok(html.includes('0x095ea7b3'), 'approve selector must stay visible');
 });
+
+test('testdrive offers a direct read-only call to the staking proxy', () => {
+  for (const needle of ['0x5c975abb', 'id="ackPing"', 'id="btnPing"', 'function sendPing', 'id="pingTarget"', 'id="pingTx"']) {
+    assert.ok(html.includes(needle), 'missing ' + needle);
+  }
+  assert.ok(html.includes('to: STAKING'), 'ping must target the staking proxy');
+  assert.ok(html.includes('data: PAUSED_SELECTOR'), 'ping must send the paused() selector');
+});

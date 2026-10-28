@@ -340,6 +340,42 @@
     </div>
   </section>
 
+  <section class="panel" aria-labelledby="ping-title">
+    <div class="panel-head">
+      <h2 id="ping-title">Ping a tracked contract</h2>
+      <span class="step">04</span>
+      <div class="head-right">
+        <span class="chip" id="chipPing"><span class="dot idle"></span><span id="chipPingText">idle</span></span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="notice">
+        <h3>One more real transaction, zero state change</h3>
+        <ul>
+          <li><b>Sepolia testnet only.</b> This sends a transaction to the Squeekchain staking contract that calls its read-only <code>paused()</code> function.</li>
+          <li>The call changes nothing: it cannot move tokens, stake, approve or call other contracts. It costs roughly 23,000 gas and only proves your wallet transacts with a Squeekchain contract directly.</li>
+          <li>This is separate from the zero allowance above. Use it when a criterion asks for a direct call to a tracked contract.</li>
+        </ul>
+      </div>
+      <label class="toggle" for="ackPing">
+        <input type="checkbox" id="ackPing" disabled>
+        <span>I understand this sends a second real testnet transaction that only reads <code>paused()</code>, and that I pay its gas.</span>
+      </label>
+      <div class="controls">
+        <button class="btn primary" id="btnPing" type="button" disabled>send ping (staking.paused())</button>
+        <span class="hint" id="pingHint">Waiting for a wallet.</span>
+      </div>
+      <dl class="kv" style="margin-top:14px">
+        <dt>Target</dt>
+        <dd class="mono" id="pingTarget">--</dd>
+        <dt>Calldata</dt>
+        <dd class="mono" id="pingCalldata">--</dd>
+        <dt>Transaction</dt>
+        <dd class="mono" id="pingTx">not sent</dd>
+      </dl>
+    </div>
+  </section>
+
   <section class="panel" aria-labelledby="log-title">
     <div class="panel-head">
       <h2 id="log-title">Activity log</h2>
@@ -378,7 +414,7 @@
   var SPENDER_LABEL = 'Squeekchain staking proxy';
 
   var APPROVE_SELECTOR = '0x095ea7b3';
-
+  var PAUSED_SELECTOR = '0x5c975abb';
   var state = {
     accounts: [],
     chainId: null,
@@ -713,32 +749,45 @@
     var connected = state.accounts.length > 0;
     var onSepolia = state.chainId === SEPOLIA_CHAIN_ID;
     var ack = $('ack');
-    if (ack) ack.disabled = !connected;
+    var ackPing = $('ackPing');
     var approve = $('btnApprove');
+    var ping = $('btnPing');
     var writeHint = $('writeHint');
+    var pingHint = $('pingHint');
+    var ready = Boolean(state.provider) && connected && onSepolia;
 
-    if (!state.provider) {
+    if (ack) ack.disabled = !ready;
+    if (ackPing) ackPing.disabled = !ready;
+
+    if (!ready) {
+      var reason = !state.provider
+        ? 'no injected wallet on this page'
+        : !connected
+          ? 'connect a wallet and switch it to Sepolia first'
+          : 'wallet is on chainId ' + state.chainId + ', this action needs Sepolia (' + SEPOLIA_CHAIN_ID + ')';
+      var tone = state.provider && !connected ? 'hint' : 'hint is-warn';
       if (approve) approve.disabled = true;
-      if (writeHint) { writeHint.textContent = 'Disabled: no injected wallet on this page.'; writeHint.className = 'hint is-warn'; }
+      if (ping) ping.disabled = true;
+      if (writeHint) { writeHint.textContent = 'Disabled: ' + reason + '.'; writeHint.className = tone; }
+      if (pingHint) { pingHint.textContent = 'Disabled: ' + reason + '.'; pingHint.className = tone; }
       return;
     }
-    if (!connected) {
-      if (approve) approve.disabled = true;
-      if (writeHint) { writeHint.textContent = 'Disabled: connect a wallet and switch it to Sepolia first.'; writeHint.className = 'hint'; }
-      return;
-    }
-    if (!onSepolia) {
-      if (approve) approve.disabled = true;
-      if (writeHint) { writeHint.textContent = 'Disabled: wallet is on chainId ' + state.chainId + ', this action needs Sepolia (' + SEPOLIA_CHAIN_ID + ').'; writeHint.className = 'hint is-warn'; }
-      return;
-    }
-    var checked = ack && ack.checked;
+
+    var checked = Boolean(ack && ack.checked);
+    var checkedPing = Boolean(ackPing && ackPing.checked);
     if (approve) approve.disabled = !checked;
+    if (ping) ping.disabled = !checkedPing;
     if (writeHint) {
       writeHint.textContent = checked
         ? 'Ready. Your wallet will open with a transaction you can still reject.'
         : 'Tick the confirmation box above to enable the button.';
       writeHint.className = 'hint' + (checked ? '' : ' is-warn');
+    }
+    if (pingHint) {
+      pingHint.textContent = checkedPing
+        ? 'Ready. Your wallet will show the paused() call before anything is sent.'
+        : 'Tick the confirmation box above to enable the button.';
+      pingHint.className = 'hint' + (checkedPing ? '' : ' is-warn');
     }
   }
 
@@ -843,6 +892,49 @@
     });
   }
 
+  function sendPing() {
+    if (!state.provider || !state.accounts.length || state.chainId !== SEPOLIA_CHAIN_ID) {
+      refreshControls();
+      return;
+    }
+    var ackPing = $('ackPing');
+    if (!ackPing || !ackPing.checked) return;
+
+    var button = $('btnPing');
+    if (button) button.disabled = true;
+    var chip = $('chipPing');
+    if (chip) chip.className = 'chip is-warn';
+    text('chipPingText', 'waiting for wallet');
+    text('pingTx', 'waiting for your wallet to confirm...');
+    log('requesting paused() as a transaction on ' + shortAddr(STAKING) + ' from ' + shortAddr(state.accounts[0]), 'warn');
+
+    state.provider.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: state.accounts[0],
+        to: STAKING,
+        data: PAUSED_SELECTOR,
+        value: '0x0'
+      }]
+    }).then(function (txHash) {
+      var el = $('pingTx');
+      var link = 'https://sepolia.etherscan.io/tx/' + txHash;
+      if (el) el.innerHTML = '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="mono">' + esc(txHash) + '</a>';
+      if (chip) chip.className = 'chip is-live';
+      text('chipPingText', 'submitted');
+      log('ping submitted: ' + txHash, 'ok');
+    }).catch(function (err) {
+      var message = err && err.message ? err.message : String(err);
+      if (chip) chip.className = 'chip is-fail';
+      text('chipPingText', 'rejected');
+      text('pingTx', 'not sent: ' + message);
+      log('ping not sent: ' + message, 'fail');
+    }).then(function () {
+      if (button) button.disabled = false;
+      refreshControls();
+    });
+  }
+
   /* ------------------------------------------------------------------ init */
 
   function init() {
@@ -851,6 +943,11 @@
     text('writeCalldata', calldata);
     var calldataEl = $('writeCalldata');
     if (calldataEl) calldataEl.title = 'selector ' + APPROVE_SELECTOR + ' + 32 byte spender + 32 byte zero amount = ' + calldata.length + ' hex chars';
+
+    text('pingTarget', shortAddr(STAKING) + ' (staking proxy, delegatecalls to the staking implementation)');
+    text('pingCalldata', PAUSED_SELECTOR);
+    var pingCalldataEl = $('pingCalldata');
+    if (pingCalldataEl) pingCalldataEl.title = 'selector for paused(): returns false and changes no state';
 
     var hasWallet = detectProvider();
     if (hasWallet && state.provider) activateProvider();
@@ -866,6 +963,10 @@
     if (approveButton) approveButton.addEventListener('click', sendApprove);
     var ack = $('ack');
     if (ack) ack.addEventListener('change', refreshControls);
+    var ackPing = $('ackPing');
+    if (ackPing) ackPing.addEventListener('change', refreshControls);
+    var pingButton = $('btnPing');
+    if (pingButton) pingButton.addEventListener('click', sendPing);
     var clear = $('btnClear');
     if (clear) clear.addEventListener('click', function () { var box = $('log'); if (box) box.innerHTML = ''; });
 
