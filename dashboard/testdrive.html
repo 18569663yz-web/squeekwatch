@@ -295,6 +295,7 @@
         <button class="btn" id="btnSwitch" type="button" style="display:none">switch to sepolia</button>
         <span class="mono dim" id="walletNote" style="font-size:10.5px"></span>
       </div>
+      <div class="controls" id="walletPicker" style="display:none"></div>
     </div>
   </section>
 
@@ -594,23 +595,118 @@
 
   /* ---------------------------------------------------------------- wallet */
 
-  function detectProvider() {
-    var provider = window.ethereum || (window.web3 && window.web3.currentProvider) || null;
+  function applyProvider(provider, label) {
     state.provider = provider && typeof provider.request === 'function' ? provider : null;
+    var walletChip = $('chipWallet');
     if (!state.provider) {
       text('chipWalletText', 'no wallet');
-      var chip = $('chipWallet');
-      if (chip) chip.className = 'chip is-warn';
-      text('walletHint', 'No injected wallet found. Install a browser wallet such as MetaMask (it exposes window.ethereum), then reload this page. The read-only checks above work without one.');
-      var connect = $('btnConnect');
-      if (connect) connect.disabled = true;
+      if (walletChip) walletChip.className = 'chip is-warn';
+      var connectButton = $('btnConnect');
+      if (connectButton) connectButton.disabled = true;
       refreshControls();
       return false;
     }
-    var walletChip = $('chipWallet');
+    state.accounts = [];
+    state.chainId = null;
     if (walletChip) walletChip.className = 'chip is-live';
-    text('chipWalletText', 'wallet detected');
+    text('chipWalletText', label || 'wallet detected');
+    var connect = $('btnConnect');
+    if (connect) connect.disabled = false;
+    var picker = $('walletPicker');
+    if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
     return true;
+  }
+
+  function renderPicker(candidates) {
+    var picker = $('walletPicker');
+    if (!picker) return;
+    picker.innerHTML = '';
+    picker.style.display = '';
+    text('chipWalletText', 'choose wallet');
+    text('walletHint', 'More than one wallet is installed in this browser. Pick the one you want to sign with - the page will not touch the others.');
+    var label = document.createElement('span');
+    label.className = 'mono dim';
+    label.style.fontSize = '10.5px';
+    label.textContent = 'detected wallets:';
+    picker.appendChild(label);
+    candidates.forEach(function (candidate) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn';
+      button.style.padding = '6px 10px';
+      button.style.fontSize = '11px';
+      button.textContent = candidate.name;
+      button.addEventListener('click', function () {
+        if (!applyProvider(candidate.provider, candidate.name)) return;
+        log('wallet selected: ' + candidate.name + ' (' + (candidate.rdns || 'no rdns') + ')', 'ok');
+        activateProvider();
+      });
+      picker.appendChild(button);
+    });
+  }
+
+  function detectProvider() {
+    // EIP-6963 lets every installed wallet announce itself, so the page can offer a choice
+    // instead of letting whichever extension claimed window.ethereum win the race. Wallets
+    // that skip EIP-6963 (or expose an extra global such as window.okxwallet) are collected
+    // from their globals and deduplicated by provider identity.
+    var candidates = [];
+    function addCandidate(provider, name, rdns) {
+      if (!provider || typeof provider.request !== 'function') return;
+      if (candidates.some(function (c) { return c.provider === provider; })) return;
+      candidates.push({ provider: provider, name: name || 'wallet', rdns: rdns || '' });
+    }
+    window.addEventListener('eip6963:announceProvider', function (event) {
+      var detail = event && event.detail;
+      if (!detail || !detail.provider || !detail.info) return;
+      addCandidate(detail.provider, detail.info.name, detail.info.rdns);
+    });
+    try { window.dispatchEvent(new Event('eip6963:requestProvider')); } catch (err) { /* older browser */ }
+
+    if (window.okxwallet) addCandidate(window.okxwallet, 'OKX Wallet', 'com.okex.wallet');
+    if (window.bitkeep && window.bitkeep.ethereum) addCandidate(window.bitkeep.ethereum, 'Bitget Wallet', 'com.bitkeep.wallet');
+    if (window.ethereum) {
+      var injectedName = window.ethereum.isMetaMask ? 'MetaMask' : window.ethereum.isRabby ? 'Rabby' : 'Injected wallet';
+      addCandidate(window.ethereum, injectedName, window.ethereum.isMetaMask ? 'io.metamask' : 'injected');
+    }
+    if (window.web3 && window.web3.currentProvider) addCandidate(window.web3.currentProvider, 'Legacy web3 provider', 'legacy');
+
+    if (candidates.length === 0) {
+      text('walletHint', 'No injected wallet found. Install a browser wallet such as MetaMask or OKX, then reload this page. The read-only checks above work without one.');
+      applyProvider(null, 'no wallet');
+      return false;
+    }
+    if (candidates.length === 1) {
+      applyProvider(candidates[0].provider, candidates[0].name + ' detected');
+      return true;
+    }
+    applyProvider(null, 'choose wallet');
+    renderPicker(candidates);
+    return true;
+  }
+
+  function activateProvider() {
+    if (!state.provider) { renderAccount(); return; }
+    state.provider.request({ method: 'eth_accounts' }).then(function (accounts) {
+      state.accounts = Array.isArray(accounts) ? accounts : [];
+      return state.provider.request({ method: 'eth_chainId' }).catch(function () { return null; });
+    }).then(function (chainHex) {
+      if (chainHex) state.chainId = parseInt(chainHex, 16);
+      renderAccount();
+    }).catch(function () { renderAccount(); });
+
+    if (state.provider.on) {
+      state.provider.on('accountsChanged', function (accounts) {
+        state.accounts = Array.isArray(accounts) ? accounts : [];
+        renderAccount();
+        log('wallet accounts changed', 'warn');
+      });
+      state.provider.on('chainChanged', function (chainHex) {
+        state.chainId = parseInt(chainHex, 16);
+        renderAccount();
+        log('wallet network changed to chainId ' + state.chainId, 'warn');
+      });
+    }
   }
 
   function refreshControls() {
@@ -757,30 +853,8 @@
     if (calldataEl) calldataEl.title = 'selector ' + APPROVE_SELECTOR + ' + 32 byte spender + 32 byte zero amount = ' + calldata.length + ' hex chars';
 
     var hasWallet = detectProvider();
-    if (hasWallet) {
-      state.provider.request({ method: 'eth_accounts' }).then(function (accounts) {
-        state.accounts = Array.isArray(accounts) ? accounts : [];
-        return state.provider.request({ method: 'eth_chainId' }).catch(function () { return null; });
-      }).then(function (chainHex) {
-        if (chainHex) state.chainId = parseInt(chainHex, 16);
-        renderAccount();
-      }).catch(function () { renderAccount(); });
-
-      if (state.provider.on) {
-        state.provider.on('accountsChanged', function (accounts) {
-          state.accounts = Array.isArray(accounts) ? accounts : [];
-          renderAccount();
-          log('wallet accounts changed', 'warn');
-        });
-        state.provider.on('chainChanged', function (chainHex) {
-          state.chainId = parseInt(chainHex, 16);
-          renderAccount();
-          log('wallet network changed to chainId ' + state.chainId, 'warn');
-        });
-      }
-    } else {
-      renderAccount();
-    }
+    if (hasWallet && state.provider) activateProvider();
+    else renderAccount();
 
     var readButton = $('btnRead');
     if (readButton) readButton.addEventListener('click', runReads);
