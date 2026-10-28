@@ -442,6 +442,9 @@ for (const file of candidateFiles) {
     continue;
   }
   if (raw.includes('\0') || !raw.includes(PLACEHOLDER)) continue;
+  // Prose that *explains* the placeholder (README instructions, the set-identity help text)
+  // is not a broken link, so it does not count as an unreplaced value.
+  if (ext === '.md' || file === 'scripts/set-identity.mjs') continue;
   const line = raw.split(/\r?\n/).findIndex((text) => text.includes(PLACEHOLDER));
   placeholders.push(`${file}${line >= 0 ? `:${line + 1}` : ''}`);
 }
