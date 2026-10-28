@@ -46,6 +46,7 @@
     "race": "node src/cli.js race",
     "mcp": "node src/cli.js mcp",
     "fixtures": "node scripts/record-fixtures.mjs",
+    "lane:watch": "node scripts/lane-watch.mjs",
     "check:launch": "node scripts/launch-checklist.mjs",
     "test": "node --test",
     "serve": "node src/server.js",
