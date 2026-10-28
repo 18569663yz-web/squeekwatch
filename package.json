@@ -12,16 +12,16 @@
     "web3",
     "dashboard"
   ],
-  "homepage": "https://github.com/REPLACE_ME/squeekwatch#readme",
+  "homepage": "https://github.com/18569663yz-web/squeekwatch#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/REPLACE_ME/squeekwatch.git"
+    "url": "git+https://github.com/18569663yz-web/squeekwatch.git"
   },
   "bugs": {
-    "url": "https://github.com/REPLACE_ME/squeekwatch/issues"
+    "url": "https://github.com/18569663yz-web/squeekwatch/issues"
   },
   "license": "MIT",
-  "author": "REPLACE_ME",
+  "author": "18569663yz-web",
   "type": "module",
   "engines": {
     "node": ">=20"
